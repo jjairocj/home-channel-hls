@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <title>Home Channel HLS // 24/7 Linear Playout</title>
+  <meta name="description"
+    content="Canal de televisión lineal 24/7: Series temáticas, animación independiente, música y pausas de emisión.">
+  <meta name="theme-color" content="#0b3a5c">
+  <link rel="icon" href="img/logo.svg" type="image/svg+xml">
+
+  <!-- Tipografías: Bungee (logo de cable 90s), VT323 (OSD / teletexto), Press Start 2P (display 7 seg), Permanent Marker (etiquetas VHS) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bungee&family=Oswald:wght@500;700&family=Press+Start+2P&family=VT323&family=Permanent+Marker&display=swap"
+    rel="stylesheet">
+
+  <!-- Hls.js para streaming en vivo -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js" defer></script>
+
+  <!-- GSAP para animaciones de la revista -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+
+  <link rel="stylesheet" href="style.css?v=20261028">
+<script type="module" src="/shared/i18n.js"></script>
+</head>
+
+<body class="retro-body">
+
+  <!-- Fondo "aurora" -->
+  <div class="aero-wallpaper" aria-hidden="true">
+    <span class="aurora a1"></span>
+    <span class="aurora a2"></span>
+    <span class="aurora a3"></span>
+  </div>
+
+  <!-- Íconos del escritorio -->
+  <aside class="desktop-icons" aria-label="Accesos directos">
+    <button class="desk-icon" data-action="tv">
+      <span class="desk-glyph">📺</span><span class="desk-label">Televisor</span>
+    </button>
+    <button class="desk-icon" data-action="tabSchedule">
+      <span class="desk-glyph">📅</span><span class="desk-label">Guía TV</span>
+    </button>
+    <button class="desk-icon" data-action="tabMedia">
+      <span class="desk-glyph">📼</span><span class="desk-label">Videoteca</span>
+    </button>
+    <button class="desk-icon" data-action="tabAbout">
+      <span class="desk-glyph">📡</span><span class="desk-label">Acerca del canal</span>
+    </button>
+  </aside>
+
+  <main class="main-container">
+
+    <!-- ============ VENTANA PRINCIPAL: TELEVISOR ============ -->
+    <section class="win-window tv-window" id="tvWindow">
+      <div class="win-titlebar">
+        <span class="win-title"><span class="win-title-icon">📺</span> Home Channel TV — Live Stream</span>
+        <span class="win-title-btns" aria-hidden="true"><span class="cap-min"></span><span class="cap-max"></span><span class="cap-close">✕</span></span>
+      </div>
+
+      <!-- Barra de herramientas (marca, identidad, estado y acciones) -->
+      <header class="win-toolbar top-nav-retro">
+        <div class="channel-brand-badge" id="channelBrandBadge">
+          <span class="brand-box" id="brandBoxText">Home Channel</span>
+          <span class="brand-name" id="brandNameText">RADIKAL</span>
+          <span class="brand-freq">CH-99 · BANDA KU</span>
+        </div>
+
+        <div class="toolbar-group">
+          <label for="channelNameSelect" class="selector-label">Identidad</label>
+          <select id="channelNameSelect" class="win-select channel-select">
+            <option value="radikal" selected>Home Channel // RADIKAL TV</option>
+            <option value="cyber">Home Channel // FRECUENCIA CYBER</option>
+            <option value="nocturna">Home Channel // NOCTURNA</option>
+            <option value="clasico">Home Channel // CLÁSICO 1999</option>
+            <option value="radio_fm">📻 Home Radio // 99.1 FM STEREO</option>
+          </select>
+        </div>
+
+        <div class="on-air-pill-retro" id="onAirPill">
+          <span class="pulse-led"></span>
+          <span id="onAirText">AL AIRE</span>
+        </div>
+
+        <div class="header-actions">
+          <div id="langSwitcherPublic" style="margin-right:8px;"></div>
+
+        </div>
+      </header>
+
+      <div class="win-body tv-broadcast-stage">
+
+        <!-- Gabinete de TV CRT de plástico (estilo televisor de mesa de los 90) -->
+        <div class="crt-cabinet" id="crtCabinet">
+
+          <div class="cabinet-top-bezel">
+            <span class="cabinet-brand">TRINIVISION<sup>®</sup> <em>Multi-System</em></span>
+            <div class="cabinet-indicators">
+              <span class="indicator-led red active" id="tvPowerLed" title="LED de Encendido"></span>
+              <span class="indicator-text">POWER</span>
+              <span class="indicator-led green active" title="Audio Estéreo"></span>
+              <span class="indicator-text">STEREO</span>
+            </div>
+          </div>
+
+          <!-- Pantalla de tubo (este contenedor entra a pantalla completa con todos los filtros) -->
+          <div class="crt-screen-wrapper" id="crtScreenWrapper">
+
+            <video id="liveVideo" autoplay muted playsinline preload="auto" poster=""></video>
+
+            <!-- SINTONIZADOR DE RADIO RETRO 90s (TUNER HI-FI) -->
+            <div class="radio-tuner-screen" id="radioTunerScreen" hidden>
+              <div class="tuner-chassis">
+
+                <!-- Cabecera del Receptor Hi-Fi -->
+                <div class="tuner-header">
+                  <div class="tuner-brand-badge">
+                    <span class="tuner-brand-logo">Channel</span>
+                    <span class="tuner-brand-model">FX-9900 // FM STEREO SYNTHESIZER TUNER</span>
+                  </div>
+                  <div class="tuner-leds-bar">
+                    <span class="t-led red active" id="ledStereo" title="Recepción FM Estéreo">STEREO</span>
+                    <span class="t-led green active" id="ledTuned" title="Frecuencia Sintonizada">TUNED</span>
+                    <span class="t-led amber" id="ledAutoMemo">AUTO</span>
+                    <span class="t-led blue active" id="ledRds">RDS</span>
+                  </div>
+                </div>
+
+                <!-- Display Fluorescente VFD (Verde Fósforo / Cyan) -->
+                <div class="tuner-vfd-display">
+                  <div class="vfd-top-row">
+                    <span class="vfd-band">FM</span>
+                    <div class="vfd-freq-container">
+                      <span class="vfd-freq-digits" id="tunerFreqDigits">99.10</span>
+                      <span class="vfd-unit">MHz</span>
+                    </div>
+                    <div class="vfd-signal-meter" title="Intensidad de señal">
+                      <span class="signal-label">SIGNAL</span>
+                      <div class="signal-bars">
+                        <span class="s-bar active"></span>
+                        <span class="s-bar active"></span>
+                        <span class="s-bar active"></span>
+                        <span class="s-bar active"></span>
+                        <span class="s-bar active"></span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Dial Analógico Iluminado con Aguja (88 a 108 MHz) -->
+                  <div class="tuner-dial-glass">
+                    <div class="dial-scale">
+                      <span>88</span><span>90</span><span>92</span><span>94</span><span>96</span><span>98</span><span>100</span><span>102</span><span>104</span><span>106</span><span>108</span>
+                    </div>
+                    <div class="dial-ticks"></div>
+                    <div class="dial-needle" id="tunerDialNeedle" style="left: 55.5%;"></div>
+                  </div>
+
+                  <!-- Pantalla Matrix RDS (Información de la Canción y DJ de IA) -->
+                  <div class="tuner-rds-screen">
+                    <div class="rds-line-show">
+                      <span class="rds-tag">SHOW:</span>
+                      <span class="rds-val" id="tunerShowName">HOME CHANNEL RADIO // 24/7 BROADCAST</span>
+                    </div>
+                    <div class="rds-line-dj">
+                      <span class="rds-tag">DJ EN CABINA:</span>
+                      <span class="rds-val highlight" id="tunerDjName">DJ VEX</span>
+                    </div>
+                    <div class="rds-line-track">
+                      <span class="rds-tag">AL AIRE:</span>
+                      <span class="rds-marquee" id="tunerTrackTitle">Conectando con Home Radio 99.1 FM...</span>
+                    </div>
+                  </div>
+
+                  <!-- Ecualizador de Espectro Gráfico VU (16 bandas) -->
+                  <div class="tuner-spectrum-bars" id="tunerSpectrum">
+                    <!-- Barras animadas dinámicas -->
+                  </div>
+                </div>
+
+                <!-- Sintonía Fija de la Emisora (99.1 FM) -->
+                <div class="tuner-presets-dock">
+                  <span class="presets-label">FRECUENCIA:</span>
+                  <div class="t-preset-single-freq active">
+                    <span class="freq-led-dot">●</span> 99.10 MHz FM STEREO // HOME CHANNEL RADIO
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <div class="crt-scanlines active" id="crtScanlines"></div>
+            <div class="crt-phosphor-grid" id="crtPhosphorGrid"></div>
+            <div class="crt-vhs-tracking"></div>
+            <div class="crt-glass-reflection"></div>
+
+            <!-- OSD de televisor/VCR -->
+            <div class="screen-osd" id="screenOsd">
+              <div class="osd-left">
+                <span class="osd-ch" id="osdChannel">CH 99</span>
+              </div>
+              <div class="osd-right">
+                <span class="osd-clock" id="osdClock">00:00:00</span>
+              </div>
+            </div>
+
+            <div class="osd-volume-meter" id="osdVolumeMeter">
+              <span class="osd-vol-label">VOLUME</span>
+              <div class="osd-vol-bars" id="osdVolBars">■■■■■■□□□□</div>
+            </div>
+
+            <div class="osd-alert-banner" id="osdAlertBanner">
+              <span class="blink-text">SINTONIZANDO SEÑAL...</span>
+            </div>
+
+            <!-- OSD Dinámico: Cartelera de Horarios de Hoy (Guía Rápida) -->
+            <div class="crt-schedule-billboard" id="crtScheduleBillboard">
+              <div class="billboard-header">
+                <span class="billboard-brand">Home Channel</span>
+                <span class="billboard-title">CARTELERA DE HOY</span>
+              </div>
+              <div class="billboard-items" id="crtBillboardItems">
+                <!-- Se inyecta dinámicamente con las próximas series -->
+              </div>
+            </div>
+
+            <button class="unmute-banner-tv" id="btnUnmuteBanner">
+              🔊 Clic aquí para activar el audio
+            </button>
+          </div>
+
+          <!-- Panel frontal: rejilla de parlante, botones físicos y display -->
+          <div class="cabinet-controls-bar">
+            <div class="speaker-grille" aria-hidden="true"></div>
+
+            <div class="bezel-buttons-group">
+              <button class="bezel-btn" id="btnBezelPower" title="Encender / Apagar TV">⏻ PWR</button>
+              <button class="bezel-btn" id="btnBezelChUp" title="Canal Arriba">CH ▲</button>
+              <button class="bezel-btn" id="btnBezelChDown" title="Canal Abajo">CH ▼</button>
+              <button class="bezel-btn" id="btnBezelVolUp" title="Subir Volumen">VOL +</button>
+              <button class="bezel-btn" id="btnBezelVolDown" title="Bajar Volumen">VOL −</button>
+              <button class="bezel-btn active" id="btnBezelMute" title="Silenciar / Activar Sonido">🔇 MUTE</button>
+              <button class="bezel-btn" id="btnBezelDegauss" title="Desmagnetizar Tubo CRT">⚡ DEGAUSS</button>
+              <button class="bezel-btn active" id="btnBezelCrtFx" title="Alternar Filtro CRT">📼 CRT: ON</button>
+              <button class="bezel-btn" id="btnBezelBillboard" title="Mostrar Cartelera de Horarios CRT (Atajo B)">📋
+                GUÍA</button>
+              <button class="bezel-btn" id="btnBezelRadio" title="Alternar Sintonizador FM">📻 RADIO</button>
+              <button class="bezel-btn" id="btnBezelFullscreen" title="Pantalla Completa manteniendo Filtros">⛶
+                FULL</button>
+            </div>
+
+            <div class="channel-display-7seg" id="channelDisplay7Seg">CH-99</div>
+          </div>
+        </div>
+
+        <!-- Control remoto infrarrojo -->
+        <div class="remote-control-dock">
+          <div class="remote-body">
+            <div class="remote-ir-sensor"></div>
+            <div class="remote-header">REMOTE<span>·99</span></div>
+
+            <div class="remote-btn-row">
+              <button class="r-btn r-power" id="rPowerBtn" title="Encender / Apagar TV">⏻</button>
+              <button class="r-btn r-func" id="rMuteBtn" title="Mute">MUTE</button>
+            </div>
+
+            <div class="remote-keypad">
+              <button class="r-btn r-num">1</button>
+              <button class="r-btn r-num">2</button>
+              <button class="r-btn r-num">3</button>
+              <button class="r-btn r-num">4</button>
+              <button class="r-btn r-num">5</button>
+              <button class="r-btn r-num">6</button>
+              <button class="r-btn r-num">7</button>
+              <button class="r-btn r-num">8</button>
+              <button class="r-btn r-num">9</button>
+              <button class="r-btn r-num" id="rTvGuideBtn">EPG</button>
+              <button class="r-btn r-num">0</button>
+              <button class="r-btn r-num" id="rFullscreenBtn">FULL</button>
+            </div>
+
+            <div class="remote-dpad">
+              <div class="dpad-row"><button class="r-btn r-arrow" id="rChUpBtn">CH ▲</button></div>
+              <div class="dpad-row mid">
+                <button class="r-btn r-arrow" id="rVolDownBtn">VOL −</button>
+                <button class="r-btn r-ok" id="rOkBtn">OK</button>
+                <button class="r-btn r-arrow" id="rVolUpBtn">VOL +</button>
+              </div>
+              <div class="dpad-row"><button class="r-btn r-arrow" id="rChDownBtn">CH ▼</button></div>
+            </div>
+
+            <div class="remote-footer-btns">
+              <button class="r-btn r-pill r-color-red" id="rCrtToggleBtn">CRT</button>
+              <button class="r-btn r-pill r-color-green" id="rDegaussBtn">DGS</button>
+              <button class="r-btn r-pill r-color-yellow" id="rGuidePillBtn">GUÍA</button>
+              <button class="r-btn r-pill r-color-blue" id="rFullscreenPillBtn">FULL</button>
+            </div>
+            <div class="remote-brand">Home Channel · IR</div>
+          </div>
+        </div>
+
+        <!-- Ahora al aire en Teletexto (P100) -->
+        <div class="teletext-status-bar">
+          <div class="teletext-box now-box">
+            <div class="teletext-tag"><span class="tt-page">P100</span> AHORA AL AIRE <span
+                class="blink-dot red"></span></div>
+            <div class="teletext-title" id="nowPlayingTitle">Sintonizando programa...</div>
+            <div class="teletext-meta">
+              <span class="meta-pill" id="nowPlayingType">PROGRAMA</span>
+              <span class="meta-pill highlight" id="nowPlayingBlock">BLOQUE 30M</span>
+              <span class="meta-time" id="progressTime">00:00 / 00:00</span>
+            </div>
+            <div class="retro-progress-container">
+              <div class="retro-progress-fill" id="progressBar"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="win-statusbar">
+        <span class="sb-cell">Audio: MTS Stereo</span>
+        <span class="sb-cell">Satélite: OPP-1</span>
+        <span class="sb-cell">HLS 1080p</span>
+        <span class="sb-cell sb-grow">Atajos: F pantalla · M mute · C filtro CRT · B cartelera · D degauss · ←→ canal ·
+          ↑↓
+          volumen</span>
+      </div>
+    </section>
+
+    <!-- ============ VENTANA SECUNDARIA: GUÍA / VIDEOTECA / ACERCA ============ -->
+    <section class="win-window guide-window" id="guideWindow">
+      <div class="win-titlebar">
+        <span class="win-title"><span class="win-title-icon">📅</span> Guía del Canal Home Channel</span>
+        <span class="win-title-btns" aria-hidden="true"><span class="cap-min"></span><span class="cap-max"></span><span class="cap-close">✕</span></span>
+      </div>
+
+      <div class="win-body">
+        <nav class="teletext-tabs-nav" role="tablist">
+          <button class="tt-tab-btn active" data-tab="tabSchedule"><span class="tt-num">P100</span> Programación
+            24h</button>
+          <button class="tt-tab-btn" data-tab="tabMedia"><span class="tt-num">P200</span> Videoteca</button>
+          <button class="tt-tab-btn" data-tab="tabAbout"><span class="tt-num">P300</span> Acerca del canal</button>
+        </nav>
+
+        <div class="tab-sheet">
+
+          <!-- P100: Parrilla - Guía Revista de Cable 90s -->
+          <section class="tab-pane active" id="tabSchedule">
+            <div class="tv-guide-magazine" id="tvGuideMagazine">
+
+              <!-- Portada: cabecera de revista de cable 90s -->
+              <header class="tg-magazine-masthead">
+                <div class="tg-masthead-badge-row">
+                  <span class="tg-mag-tag">Guía oficial de televisión</span>
+                  <span class="tg-mag-vol">Año 1999 · Edición continua</span>
+                  <span class="tg-mag-signal">Banda C // Home Channel</span>
+                </div>
+
+                <div class="tg-masthead-main">
+                  <div class="tg-mag-logo" aria-label="TeleGuía X-99">
+                    <span class="tg-logo-tele">Tele</span><span class="tg-logo-guia">Guía</span>
+                    <span class="tg-logo-x99">X-99</span>
+                  </div>
+
+                  <div class="tg-mag-titles">
+                    <h2 class="tg-mag-brand">Revista de Programación</h2>
+                    <p class="tg-mag-tagline">Horarios completos · Anime radikal · Animación adulta · Clásicos de culto
+                    </p>
+                  </div>
+
+                  <div class="tg-mag-page-box">
+                    <span class="tg-page-label">Nº</span>
+                    <span class="tg-page-num">100</span>
+                    <span class="tg-date-stamp" id="tgMagDate">HOY</span>
+                    <span class="tg-price">$2.50</span>
+                  </div>
+
+                  <div class="tg-starburst tg-cover-burst" aria-hidden="true"><span>¡24 horas<br>de TV!</span></div>
+                </div>
+
+                <!-- Índice de días (pestañas de canto de revista) -->
+                <div class="tg-day-selector" id="tgDaySelector">
+                  <span class="tg-day-label">Día</span>
+                  <button class="tg-day-btn active" data-day="today">Hoy</button>
+                  <button class="tg-day-btn" data-day="monday">Lun</button>
+                  <button class="tg-day-btn" data-day="tuesday">Mar</button>
+                  <button class="tg-day-btn" data-day="wednesday">Mié</button>
+                  <button class="tg-day-btn" data-day="thursday">Jue</button>
+                  <button class="tg-day-btn" data-day="friday">Vie</button>
+                  <button class="tg-day-btn" data-day="saturday">Sáb</button>
+                  <button class="tg-day-btn" data-day="sunday">Dom</button>
+                  <a class="tg-pdf-btn" href="/guia-semanal.pdf" download title="Descarga la revista con la programación de toda la semana">
+                    <span class="tg-pdf-icon" aria-hidden="true">📰</span> Revista de la semana <small>PDF</small>
+                  </a>
+                </div>
+
+                <!-- Secciones por franja horaria -->
+                <div class="tg-mag-nav" id="tgMagNav">
+                  <button class="tg-filter-btn f-all active" data-filter="all">Todo el día</button>
+                  <button class="tg-filter-btn f-morning" data-filter="morning">Mañana <small>5AM–12PM</small></button>
+                  <button class="tg-filter-btn f-afternoon" data-filter="afternoon">Tarde <small>12–6PM</small></button>
+                  <button class="tg-filter-btn f-primetime" data-filter="primetime">Prime Time
+                    <small>6PM–1AM</small></button>
+                  <button class="tg-filter-btn f-night" data-filter="night">Madrugada <small>1–5AM</small></button>
+                </div>
+              </header>
+
+              <!-- Recuadro destacado (lo llena app.js) -->
+              <aside class="tg-feature" id="tgFeature" hidden></aside>
+
+              <!-- Listado en columnas de revista -->
+              <div class="tg-magazine-content" id="tgMagazineContent">
+                <div class="tg-guide-grid" id="tgGuideGrid">
+                  <div class="tg-loading">Imprimiendo la guía de programación...</div>
+                </div>
+              </div>
+
+              <!-- Pie de página con código de barras -->
+              <footer class="tg-magazine-footer">
+                <span class="tg-footer-note">Home Channel Broadcast System · Bloques de 30 minutos</span>
+                <span class="tg-barcode" aria-hidden="true"></span>
+                <span class="tg-footer-m3u">Transmisión satelital 24/7 · Audio estéreo MTS</span>
+              </footer>
+
+            </div>
+          </section>
+
+          <!-- P200: Videoteca -->
+          <section class="tab-pane" id="tabMedia">
+            <div class="retro-card-header">
+              <div class="card-headline">Videoteca — Series y Programas en Emisión</div>
+              <div class="media-filter-buttons">
+                <button class="win-btn m-filter active" data-filter="all">Todas</button>
+                <button class="win-btn m-filter" data-filter="anime">Anime</button>
+                <button class="win-btn m-filter" data-filter="series">Animación adulta</button>
+                <button class="win-btn m-filter" data-filter="retro">Selección retro</button>
+              </div>
+            </div>
+
+            <div class="media-archive-grid" id="mediaGrid">
+              <div class="loading-state">Leyendo biblioteca...</div>
+            </div>
+          </section>
+
+          <!-- P300: Acerca del canal -->
+          <section class="tab-pane" id="tabAbout">
+            <div class="about-content-box">
+              <div class="about-hero">
+                <img src="img/logo.svg" alt="Canal X-99" class="about-logo">
+                <div class="under-construction">🚧 Sitio en construcción permanente desde 1999 🚧</div>
+              </div>
+              <p>Este canal recrea la experiencia de sintonizar una estación de televisión lineal:
+                series temáticas, <strong>animación independiente</strong>, sesiones de música electrónica y bloques de cortinillas y avisos.
+              </p>
+              <p>Toda la emisión corre 24/7 en un servidor propio, organizada en bloques de 30 minutos con cortinillas
+                originales y logo quemado en la señal, para que se vea idéntico en cualquier dispositivo.</p>
+
+              <div class="web-badges">
+                <span class="web-badge b-netscape">Netscape <b>NOW!</b></span>
+                <span class="web-badge b-res">Mejor visto en <b>800×600</b></span>
+                <span class="web-badge b-ie">Hecho con <b>Bloc de notas</b></span>
+                <span class="web-badge b-y2k">Compatible <b>Y2K</b></span>
+              </div>
+
+              <div class="hit-counter">
+                Eres el visitante N° <span class="counter-digits" id="hitCounter">000000</span>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============ BARRA DE TAREAS (Inicio + noticias + bandeja) ============ -->
+  <footer class="bottom-ticker-bar taskbar">
+    <button class="start-btn" id="btnStart" aria-haspopup="menu" aria-expanded="false" aria-controls="startMenu" title="Inicio">
+      <span class="orb-glyph" aria-hidden="true">X</span><span class="sr-only">Inicio</span>
+    </button>
+
+    <div class="start-menu" id="startMenu" role="menu">
+      <div class="start-menu-items">
+        <button role="menuitem" data-action="tv"><span class="sm-ico">📺</span><span><strong>Televisor</strong><small>Señal en vivo 24/7</small></span></button>
+        <button role="menuitem" data-action="tabSchedule"><span class="sm-ico">📅</span><span><strong>Guía de programación</strong><small>TeleGuía de hoy y de la semana</small></span></button>
+        <button role="menuitem" data-action="tabMedia"><span class="sm-ico">📼</span><span><strong>Videoteca</strong><small>Series y programas en emisión</small></span></button>
+        <button role="menuitem" data-action="fullscreen"><span class="sm-ico">⛶</span><span><strong>Pantalla completa</strong><small>Con los filtros del televisor</small></span></button>
+      </div>
+      <div class="start-menu-side">
+        <div class="sm-user"><span class="sm-user-tile">X</span><span>Canal <b>Home Channel</b></span></div>
+        <button role="menuitem" class="sm-link" data-action="tabAbout">❔ Acerca del canal</button>
+        <a role="menuitem" class="sm-link" href="/epg.xml" target="_blank" rel="noopener">🗓 Guía EPG (XMLTV)</a>
+        <a role="menuitem" class="sm-link" href="/live/channel.m3u8" target="_blank" rel="noopener">🔗 Señal HLS directa</a>
+      </div>
+    </div>
+
+    <div class="taskbar-task" title="Ventana activa">📺 Home Channel TV</div>
+
+    <div class="taskbar-tray">
+      <span class="tray-led" id="trayLed" title="Estado de la señal"></span>
+      <span class="tray-icon" title="Volumen">🔈</span>
+      <span class="ticker-clock" id="tickerClock">00:00:00</span>
+    </div>
+  </footer>
+
+
+
+  
+
+  <!-- Cuadro de mensaje estilo Windows (reemplaza alert()) -->
+  <div class="msgbox-overlay" id="msgBox">
+    <div class="win-window msgbox" role="alertdialog" aria-labelledby="msgBoxTitle">
+      <div class="win-titlebar">
+        <span class="win-title" id="msgBoxTitle">Canal Home Channel</span>
+        <button class="win-close" data-close-msgbox aria-label="Cerrar">✕</button>
+      </div>
+      <div class="win-body msgbox-body">
+        <span class="msgbox-icon">ℹ️</span>
+        <p id="msgBoxText"></p>
+      </div>
+      <div class="msgbox-actions"><button class="win-btn btn-default" data-close-msgbox>Aceptar</button></div>
+    </div>
+  </div>
+
+  <script type="module" src="/js/main.js?v=20261028-1"></script>
+</body>
+
+</html>

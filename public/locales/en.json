@@ -1,0 +1,129 @@
+{
+  "app": {
+    "title": "Home Channel HLS",
+    "subtitle": "24/7 Linear Playout Engine & Master Control",
+    "status": {
+      "on_air": "ON AIR (1080p)",
+      "off_air": "OFF AIR",
+      "stopped": "STOPPED",
+      "starting": "STARTING",
+      "reconnecting": "RECONNECTING"
+    }
+  },
+  "nav": {
+    "live": "Live Monitor",
+    "programming": "Programming Grid",
+    "shows": "Shows & Series",
+    "episodes": "Episodes",
+    "commercials": "Commercials & Spots",
+    "bumpers": "Voiceover & Bumpers",
+    "transcoder": "Transcode Queue",
+    "upload": "Upload & Ingest",
+    "audience": "Audience & Analytics",
+    "radio": "Radio FM",
+    "guide": "TV Guide",
+    "desktop": "Desktop",
+    "logout": "Logout"
+  },
+  "live": {
+    "now_playing": "Now Playing",
+    "current_block": "Current Time Slot",
+    "next_up": "Next Up",
+    "clock_sync": "Clock Sync",
+    "remaining": "Remaining",
+    "elapsed": "Elapsed",
+    "restart_stream": "Restart Stream",
+    "skip_item": "Skip Next Program",
+    "resync_clock": "Sync to Clock",
+    "stop_stream": "⏸ STOP STREAM",
+    "start_stream": "▶ START STREAM",
+    "audio_track": "Audio Track",
+    "video_bitrate": "Video Bitrate",
+    "hls_url": "HLS Stream URL",
+    "epg_url": "EPG XMLTV URL",
+    "copy_link": "Copy Link",
+    "link_copied": "Link copied to clipboard!"
+  },
+  "programming": {
+    "title": "Weekly Schedule Grid",
+    "add_rule": "Add Scheduling Rule",
+    "proposals": "Automated Schedule Proposals",
+    "days": {
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
+    },
+    "block_duration": "Slot Duration: 30 minutes",
+    "apply_changes": "Apply Schedule",
+    "clear_slot": "Clear Slot",
+    "series_mode": "Sequential Mode",
+    "marathon_mode": "Weekend Marathon",
+    "episodic_mode": "Random Episodes"
+  },
+  "shows": {
+    "title": "Shows & Series",
+    "new_show": "Create New Show",
+    "no_shows": "No shows found. Upload your legal video media or add a new show.",
+    "episodes_count": "{count} episodes",
+    "current_episode": "Next Episode to Air: #{ep}",
+    "add_episode": "Add Episode",
+    "delete_show": "Delete Show",
+    "edit_show": "Edit Show Details"
+  },
+  "commercials": {
+    "title": "Commercials & Bumpers",
+    "add_spot": "Add Commercial Clip",
+    "filter_all": "All",
+    "filter_commercials": "Commercials",
+    "filter_bumpers": "Bumpers & Idents",
+    "filter_station_id": "Station IDs",
+    "cooling_down": "Cooling Down",
+    "ready": "Active in Rotation",
+    "duration": "Duration"
+  },
+  "transcoder": {
+    "title": "Transcoder Engine",
+    "active_jobs": "Active Processing Jobs",
+    "queue_empty": "No active transcode jobs.",
+    "input_file": "Input File",
+    "format": "Target: 1080p H.264 + EBU R128 Audio Normalization",
+    "fps": "Encoding Speed",
+    "progress": "Progress"
+  },
+  "upload": {
+    "title": "Legal Media Ingest & Upload",
+    "instructions": "Upload your own original videos, licensed content, or public domain video files. Files are automatically analyzed, normalized, and encoded into broadcast quality.",
+    "dropzone": "Drag & drop video files here (.mp4, .mkv, .mov, .ts) or click to browse",
+    "target_type": "Content Type",
+    "type_show": "Show / Series Episode",
+    "type_commercial": "Commercial / Spot",
+    "type_bumper": "Station Bumper / Ident",
+    "select_show": "Assign to Show",
+    "upload_button": "Start Upload",
+    "uploading": "Uploading... {percent}%",
+    "success": "File successfully uploaded and sent to transcode queue!"
+  },
+  "audience": {
+    "title": "Audience & Stream Metrics",
+    "viewers_now": "Concurrent Viewers",
+    "unique_today": "Daily Unique Viewers",
+    "avg_watch_time": "Average Watch Time",
+    "top_programs": "Most Watched Content"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "confirm": "Are you sure?",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Operation completed successfully",
+    "language": "Language",
+    "docs": "Documentation"
+  }
+}

@@ -1,0 +1,129 @@
+{
+  "app": {
+    "title": "Home Channel HLS",
+    "subtitle": "Motor de Emisión Lineal 24/7 y Master Control",
+    "status": {
+      "on_air": "AL AIRE (1080p)",
+      "off_air": "FUERA DE AIRE",
+      "stopped": "DETENIDO",
+      "starting": "INICIANDO",
+      "reconnecting": "RECONECTANDO"
+    }
+  },
+  "nav": {
+    "live": "Monitor en Vivo",
+    "programming": "Parrilla",
+    "shows": "Series",
+    "episodes": "Capítulos",
+    "commercials": "Comerciales",
+    "bumpers": "Locución",
+    "transcoder": "Transcodificación",
+    "upload": "Subida e Ingesta",
+    "audience": "Audiencia",
+    "radio": "Radio FM",
+    "guide": "Guía TV",
+    "desktop": "Escritorio",
+    "logout": "Cerrar Sesión"
+  },
+  "live": {
+    "now_playing": "Al Aire Ahora",
+    "current_block": "Bloque Horario Actual",
+    "next_up": "A Continuación",
+    "clock_sync": "Sincronización de Reloj",
+    "remaining": "Restante",
+    "elapsed": "Transcurrido",
+    "restart_stream": "Reiniciar Emisión",
+    "skip_item": "Adelantar programa",
+    "resync_clock": "Sincronizar reloj",
+    "stop_stream": "⏸ DETENER EMISIÓN",
+    "start_stream": "▶ INICIAR EMISIÓN",
+    "audio_track": "Pista de Audio",
+    "video_bitrate": "Tasa de Bits de Video",
+    "hls_url": "URL del Stream HLS",
+    "epg_url": "URL de Guía XMLTV",
+    "copy_link": "Copiar Enlace",
+    "link_copied": "¡Enlace copiado al portapapeles!"
+  },
+  "programming": {
+    "title": "Parrilla Semanal de Programación",
+    "add_rule": "Agregar Regla de Emisión",
+    "proposals": "Propuestas Automáticas de Parrilla",
+    "days": {
+      "monday": "Lunes",
+      "tuesday": "Martes",
+      "wednesday": "Miércoles",
+      "thursday": "Jueves",
+      "friday": "Viernes",
+      "saturday": "Sábado",
+      "sunday": "Domingo"
+    },
+    "block_duration": "Duración de bloque: 30 minutos",
+    "apply_changes": "Aplicar Programación",
+    "clear_slot": "Limpiar Espacio",
+    "series_mode": "Modo Secuencial",
+    "marathon_mode": "Maratón Fin de Semana",
+    "episodic_mode": "Episodios al Azar"
+  },
+  "shows": {
+    "title": "Series y Programas",
+    "new_show": "Crear Nueva Serie",
+    "no_shows": "No hay programas registrados. Sube tus videos legales o añade una nueva serie.",
+    "episodes_count": "{count} episodios",
+    "current_episode": "Próximo episodio al aire: #{ep}",
+    "add_episode": "Añadir Episodio",
+    "delete_show": "Eliminar Serie",
+    "edit_show": "Editar Detalles"
+  },
+  "commercials": {
+    "title": "Comerciales y Cortinillas",
+    "add_spot": "Añadir Comercial",
+    "filter_all": "Todos",
+    "filter_commercials": "Comerciales",
+    "filter_bumpers": "Cortinillas e Idents",
+    "filter_station_id": "Station IDs",
+    "cooling_down": "Enfriando",
+    "ready": "Activo en Rotación",
+    "duration": "Duración"
+  },
+  "transcoder": {
+    "title": "Motor Transcodificador",
+    "active_jobs": "Procesos en Curso",
+    "queue_empty": "No hay tareas de codificación activas.",
+    "input_file": "Archivo de Origen",
+    "format": "Destino: 1080p H.264 + Normalización EBU R128",
+    "fps": "Velocidad de Codificación",
+    "progress": "Progreso"
+  },
+  "upload": {
+    "title": "Ingesta Legal de Medios y Subida",
+    "instructions": "Sube tus grabaciones originales, videos de dominio público o producciones autorizadas. Los archivos se inspeccionan, normalizan y codifican automáticamente a calidad de emisión.",
+    "dropzone": "Arrastra archivos de video aquí (.mp4, .mkv, .mov, .ts) o haz clic para explorar",
+    "target_type": "Tipo de Contenido",
+    "type_show": "Capítulo de Serie / Show",
+    "type_commercial": "Comercial / Spot",
+    "type_bumper": "Cortinilla / Bumper de Estación",
+    "select_show": "Asignar a Serie",
+    "upload_button": "Iniciar Subida",
+    "uploading": "Subiendo... {percent}%",
+    "success": "¡Archivo subido exitosamente y enviado a la cola de transcodificación!"
+  },
+  "audience": {
+    "title": "Audiencia y Métricas de Señal",
+    "viewers_now": "Espectadores Simultáneos",
+    "unique_today": "Espectadores Únicos Hoy",
+    "avg_watch_time": "Tiempo Promedio de Visualización",
+    "top_programs": "Programas Más Vistos"
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "confirm": "¿Estás seguro?",
+    "loading": "Cargando...",
+    "error": "Ocurrió un error",
+    "success": "Operación completada con éxito",
+    "language": "Idioma",
+    "docs": "Documentación"
+  }
+}

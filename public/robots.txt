@@ -1,0 +1,3 @@
+# Home Channel HLS - Bloqueo total para motores de búsqueda y rastreadores
+User-agent: *
+Disallow: /

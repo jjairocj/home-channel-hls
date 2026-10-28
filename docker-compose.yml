@@ -1,0 +1,89 @@
+# ====================================================================
+# Home Channel HLS - Docker Compose Setup
+# Full 24/7 Linear TV Playout & Master Control Engine
+# ====================================================================
+
+services:
+  # ------------------------------------------------------------------
+  # Playout Engine & Web Master Control Studio
+  # ------------------------------------------------------------------
+  channel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: home-channel-hls:latest
+    container_name: home-channel-hls
+    restart: unless-stopped
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "${PORT:-3000}:3000"
+    # RAM disk for live HLS video chunks (prevents SSD wear and provides instant delivery)
+    tmpfs:
+      - /app/stream:size=256m,mode=1777
+    volumes:
+      # Persistent media storage (shows, commercials, bumpers)
+      - ./data/media:/app/media
+      # Local folder for personal recordings and legal video ingest
+      - ./data/ingest:/app/media/ingest
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - TZ=${TZ:-UTC}
+      - CHANNEL_NAME=${CHANNEL_NAME:-Home Channel}
+      - CHANNEL_CALLSIGN=${CHANNEL_CALLSIGN:-CH-01}
+      - PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-http://localhost:3000}
+      # Database connection (points to the bundled postgres service below)
+      - PG_HOST=db
+      - PG_PORT=5432
+      - PG_USER=${POSTGRES_USER:-channel_user}
+      - PG_PASSWORD=${POSTGRES_PASSWORD:-channel_password}
+      - PG_DATABASE=${POSTGRES_DB:-homechannel}
+      # Admin security (initial setup)
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - ADMIN_SECRET=${ADMIN_SECRET:-super-secret-random-key-change-me}
+      # Optional: TTS engine for dynamic Next-Up announcements
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY:-}
+      - ELEVENLABS_VOICE_ID=${ELEVENLABS_VOICE_ID:-}
+    depends_on:
+      db:
+        condition: service_healthy
+
+    # ----------------------------------------------------------------
+    # HARDWARE ACCELERATION (OPTIONAL)
+    # Uncomment the section below matching your host hardware:
+    # ----------------------------------------------------------------
+    # Option A: NVIDIA GPU (NVENC)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+    #
+    # Option B: Intel QuickSync / AMD VAAPI (/dev/dri)
+    # devices:
+    #   - /dev/dri:/dev/dri
+
+  # ------------------------------------------------------------------
+  # PostgreSQL Database (Persistent Metadata & Scheduling)
+  # ------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: home-channel-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-channel_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-channel_password}
+      POSTGRES_DB: ${POSTGRES_DB:-homechannel}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-channel_user} -d ${POSTGRES_DB:-homechannel}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s

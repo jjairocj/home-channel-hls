@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <meta name="theme-color" content="#0b3a5c">
+  <title>Home Channel — Master Control</title>
+  <meta name="description" content="Panel de control master para gestión de programas, capítulos, subida con transcodificación 1080p y configuración de la parrilla semanal.">
+
+  <link rel="icon" href="/img/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css?v=20261028">
+</head>
+<body class="admin-body">
+
+  <!-- Fondo "aurora" -->
+  <div class="aero-wallpaper" aria-hidden="true">
+    <span class="aurora a1"></span>
+    <span class="aurora a2"></span>
+    <span class="aurora a3"></span>
+  </div>
+
+  <!-- Barra superior de cristal: marca, estado de la señal y controles de emisión -->
+  <header class="aero-topbar">
+    <div class="topbar-brand">
+      <span class="brand-orb-mini" aria-hidden="true">X</span>
+      <div class="brand-text">
+        <strong>Home Channel</strong>
+        <span>Master Control</span>
+      </div>
+    </div>
+
+    <div class="live-status-pill" id="adminLivePill">
+      <span class="pulse-dot"></span>
+      <span id="adminLiveText">AL AIRE (1080p)</span>
+    </div>
+
+    <div class="topbar-actions">
+      <div id="langSwitcherAdmin"></div>
+      <button class="btn-studio btn-warning" id="btnHeaderNextProgram" title="Adelantar la emisión al siguiente programa de la parrilla">
+        <span class="btn-ico">⏭</span><span class="btn-txt" data-i18n="live.skip_item">Adelantar programa</span>
+      </button>
+      <button class="btn-studio btn-primary" id="btnHeaderSyncClock" title="Sincronizar la emisión al horario oficial (:00 y :30)">
+        <span class="btn-ico">🕒</span><span class="btn-txt" data-i18n="live.resync_clock">Sincronizar reloj</span>
+      </button>
+      <button class="btn-studio btn-danger" id="btnAdminTogglePlayout" title="Detener o reanudar la emisión">
+        <span id="btnPlayoutStatusText">⏸ DETENER EMISIÓN</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="aero-desktop">
+
+    <!-- Ventanas (una por pestaña) -->
+    <main class="admin-main">
+
+      <!-- SERIES Y PROGRAMAS -->
+      <section class="admin-tab-content active" id="tabShows">
+        <div class="content-panel aero-window">
+          <div class="window-title"><span class="window-icon">🎬</span> Series y programas</div>
+          <div class="window-commandbar">
+            <button class="btn-studio btn-primary" id="btnCreateShowModal">＋ Crear programa</button>
+            <input type="search" id="showsSearchInput" class="admin-input" placeholder="🔍 Buscar serie o categoría..." style="max-width: 280px; margin-left: 8px;">
+            <span class="count-label" id="showsCountLabel" style="margin-left: auto;"></span>
+          </div>
+          <div class="window-body">
+            <p class="window-intro">Crea series temáticas (Animación, Sci-Fi, Series) y administra sus capítulos.</p>
+            <div class="shows-grid" id="showsListContainer">
+              <div class="loading-box">Cargando programas...</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- COMERCIALES Y CORTINILLAS -->
+      <section class="admin-tab-content" id="tabCommercials">
+        <div class="content-panel aero-window">
+          <div class="window-title"><span class="window-icon">📼</span> Comerciales y cortinillas</div>
+          <div class="window-commandbar">
+            <button class="btn-studio btn-primary" id="btnUploadCommercialModal">＋ Subir comercial o bumper</button>
+            
+            <input type="search" id="commercialsSearchInput" class="admin-input" placeholder="🔍 Buscar comercial o bumper..." style="max-width: 240px; margin-left: 8px;">
+            <div class="filter-bar">
+              <button class="pill-btn active" data-cfilter="all">Todos</button>
+              <button class="pill-btn" data-cfilter="commercial">Comerciales</button>
+              <button class="pill-btn" data-cfilter="bumper">Bumpers</button>
+            </div>
+            <div class="filter-bar" style="margin-left: 6px;">
+              <button class="pill-btn active" id="btnCommercialsViewGrid" data-view="grid" title="Vista en Mosaico">🎴 Mosaico</button>
+              <button class="pill-btn" id="btnCommercialsViewTable" data-view="table" title="Tabla de Control y Rotación">📋 Tabla de Control</button>
+            </div>
+            <span class="count-label" id="commercialsCountLabel" style="margin-left: auto;"></span>
+          </div>
+          <div class="window-body">
+            <!-- Panel de Control de Rotación y Prevención de Duplicaciones -->
+            <div class="aero-card" style="margin-bottom: 16px; padding: 14px 18px; background: linear-gradient(180deg, #f8fafc 0%, #edf3f8 100%); border: 1px solid #c9d8e5; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+              <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid #d8e3ed; padding-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 18px;">⚖️</span>
+                  <div>
+                    <strong style="font-size: 14px; color: #1e3a5f;">Control de Rotación y Prevención de Duplicaciones</strong>
+                    <span style="display: block; font-size: 11px; color: #64748b;">Evita que los comerciales se repitan frecuentemente fijando un tiempo de enfriamiento (cooldown) y límite de spots por tanda.</span>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span class="meta-tag" id="rotationStatTotalComms" style="font-size: 11px;">📼 0 comerciales</span>
+                  <span class="meta-tag" id="rotationStatTotalAirings" style="font-size: 11px;">📊 0 emisiones registradas</span>
+                  <button type="button" class="btn-micro-danger" id="btnResetRotationStats" title="Reiniciar contadores de emisión">🔄 Resetear Contadores</button>
+                </div>
+              </div>
+
+              <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
+                <div style="flex: 1; min-width: 220px;">
+                  <label style="display: block; font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 4px;">
+                    ⏱️ Separación mínima entre repeticiones:
+                  </label>
+                  <select id="rotationMinSeparationSelect" class="admin-input-compact" style="width: 100%; height: 32px; font-size: 12px;">
+                    <option value="2">2 bloques (1 hora de descanso)</option>
+                    <option value="4">4 bloques (2 horas de descanso)</option>
+                    <option value="6" selected>6 bloques (3 horas de descanso — Recomendado)</option>
+                    <option value="8">8 bloques (4 horas de descanso)</option>
+                    <option value="12">12 bloques (6 horas de descanso)</option>
+                  </select>
+                </div>
+
+                <div style="flex: 1; min-width: 220px;">
+                  <label style="display: block; font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 4px;">
+                    🎯 Máximo de spots por tanda / bloque:
+                  </label>
+                  <select id="rotationMaxSpotsSelect" class="admin-input-compact" style="width: 100%; height: 32px; font-size: 12px;">
+                    <option value="0" selected>Sin límite (Llenar con comerciales todo el tiempo libre — Recomendado)</option>
+                    <option value="3">3 comerciales (~1:30 min)</option>
+                    <option value="4">4 comerciales (~2:00 min)</option>
+                    <option value="5">5 comerciales (~2:30 min)</option>
+                    <option value="6">6 comerciales (~3:00 min)</option>
+                    <option value="8">8 comerciales (~4:00 min)</option>
+                  </select>
+                </div>
+
+                <div style="display: flex; gap: 8px;">
+                  <button type="button" class="btn-studio btn-primary" id="btnSaveRotationConfig" style="height: 32px; font-size: 12px; white-space: nowrap;">
+                    💾 Guardar y Aplicar Rotación
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Vista 1: Cuadrícula de Tarjetas con Mini-Reproductor -->
+            <div class="commercials-grid" id="commercialsListContainer">
+              <div class="loading-box">Cargando comerciales...</div>
+            </div>
+
+            <!-- Vista 2: Tabla de Control y Rotación -->
+            <div class="table-container" id="commercialsTableWrap" style="display: none; margin-top: 10px; overflow-x: auto; background: #fff; border: 1px solid #d5dfe5; border-radius: 4px;">
+              <table class="matrix-table sortable" id="commercialsRotationTable">
+                <thead>
+                  <tr>
+                    <th style="width: 60px; text-align: center;">Video</th>
+                    <th data-sort="title">Comercial / Bumper</th>
+                    <th data-sort="type" style="width: 100px;">Tipo</th>
+                    <th data-sort="duration" style="width: 80px; text-align: center;">Duración</th>
+                    <th data-sort="airCount" style="width: 110px; text-align: center;">Emisiones</th>
+                    <th data-sort="lastAired" style="width: 140px;">Última Emisión</th>
+                    <th style="width: 130px; text-align: center;">Estado</th>
+                    <th style="width: 140px;">Prioridad / Peso</th>
+                    <th style="width: 80px; text-align: center;">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="commercialsTableBody">
+                  <tr><td colspan="9" class="muted center">Cargando tabla de rotación...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PARRILLA -->
+      <section class="admin-tab-content" id="tabScheduler">
+        <div class="content-panel aero-window">
+          <div class="window-title"><span class="window-icon">📅</span> Programador de parrilla</div>
+          <div class="window-commandbar programming-actions">
+            <button class="btn-studio btn-primary" id="btnNewRule">＋ Nueva regla</button>
+            <button class="btn-studio btn-ghost" id="btnGenerateProposal">⚡ Proponer parrilla</button>
+            <button class="btn-studio btn-primary" id="btnReviewProposal" hidden>👁 Ver propuesta</button>
+            <button class="btn-studio btn-ghost" id="btnOpenGroupsModal">🧩 Agrupar temporadas</button>
+          </div>
+          <div class="window-body">
+            <p class="window-intro">La parrilla se arma con reglas: <em>esta serie, estos días, a esta hora</em>. Lo sugerido por la programación automática se ve punteado; lo que ajustes queda como tuyo y la próxima propuesta lo respeta. Lo que pongas en un horario <strong>reemplaza lo que había</strong>.</p>
+
+            <div class="programming-banner" id="programmingBanner">Cargando programación...</div>
+
+            <!-- Vista semanal editable (columnas = días de transmisión, de 06:00 a 05:30) -->
+            <div class="week-toolbar">
+              <div class="week-legend">
+                <span class="wk-badge b-premiere">Estreno</span>
+                <span class="wk-badge b-repeat">Repetición</span>
+                <span class="wk-badge b-marathon">Maratón</span>
+                <span class="wk-badge b-random">Al azar</span>
+                <span class="wk-badge b-off">Cierre</span>
+                <span class="wk-legend-auto">sugerida</span>
+                <span class="wk-legend-manual">tuya</span>
+              </div>
+              <span class="badge-hint" id="weekStatus"></span>
+            </div>
+            <div class="series-finder">
+              <input type="search" class="admin-input" id="seriesFinderSearch" placeholder="Buscar serie…" aria-label="Buscar serie en la parrilla">
+              <div class="series-chips" id="seriesFinder" role="listbox" aria-label="Series disponibles: elige una para resaltarla en la parrilla"></div>
+            </div>
+            <div class="week-days-picker" id="weekDayPicker" role="tablist" aria-label="Día de la parrilla"></div>
+            <div class="week-conflicts" id="weekConflicts" hidden></div>
+            <div class="week-calendar-wrap">
+              <div class="week-calendar" id="weekCalendar">Cargando parrilla...</div>
+            </div>
+            <p class="badge-hint week-help">
+              <span class="only-desktop">Clic en un bloque para editarlo · clic en un espacio vacío para crear una regla · arrastra un bloque para moverlo <strong>ese día</strong> (con <kbd>Shift</kbd>, todos sus días) · estira el borde inferior para cambiar la duración.</span>
+              <span class="only-mobile">Toca un bloque para editarlo o un espacio vacío para crear una regla.</span>
+              Cada cambio entra al aire en el próximo :00/:30.
+            </p>
+
+            <!-- Series: franja, orden, frecuencia y estado -->
+            <fieldset class="group-box programming-card" id="programmingCard">
+              <legend>📺 Series</legend>
+              <p class="badge-hint">Preferencias que usa la programación automática. Con una franja elegida a mano, estreno y repeticiones se quedan dentro de ella.</p>
+              <div class="table-tools">
+                <input type="search" class="admin-input" id="progSearch" placeholder="Buscar serie…" aria-label="Buscar serie">
+                <select class="admin-input" id="progStatusFilter" aria-label="Filtrar por estado">
+                  <option value="">Todos los estados</option>
+                  <option value="grid">En la parrilla</option>
+                  <option value="unscheduled">Listas, sin horario</option>
+                  <option value="waiting">No disponibles</option>
+                </select>
+                <select class="admin-input" id="progFranjaFilter" aria-label="Filtrar por franja"><option value="">Todas las franjas</option></select>
+                <span class="badge-hint" id="progCount"></span>
+              </div>
+              <div class="schedule-table-wrap">
+                <table class="matrix-table sortable" id="programmingTable">
+                  <thead>
+                    <tr>
+                      <th data-sort="label" aria-sort="ascending">Serie / grupo</th>
+                      <th data-sort="current">En emisión</th>
+                      <th data-sort="franja">Franja</th>
+                      <th>Orden</th>
+                      <th>Frecuencia</th>
+                      <th>Máx. al día</th>
+                      <th>Maratón</th>
+                      <th data-sort="remaining">Restantes</th>
+                      <th data-sort="slots">Al aire</th>
+                      <th data-sort="status">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody id="programmingBody">
+                    <tr><td colspan="10" class="cell-empty">Cargando...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </fieldset>
+
+            <!-- Vista previa de los 48 bloques generados para hoy -->
+            <fieldset class="group-box upcoming-preview-box">
+              <legend>Próximos 48 bloques de emisión (24 horas)</legend>
+              <div class="sub-header">
+                <span class="badge-hint">Lo que va a salir al aire, bloque por bloque.</span>
+                <button class="btn-micro" id="btnRegenerateNow">↻ Regenerar ahora</button>
+              </div>
+              <div class="schedule-table-wrap">
+                <table class="matrix-table" id="adminScheduleTable">
+                  <thead>
+                    <tr>
+                      <th>Hora</th>
+                      <th>Programa / serie</th>
+                      <th>Estructura del bloque</th>
+                      <th>Duración</th>
+                    </tr>
+                  </thead>
+                  <tbody id="adminScheduleBody">
+                    <tr><td colspan="4" class="cell-empty">Cargando bloques...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </fieldset>
+          </div>
+        </div>
+      </section>
+
+      <!-- COLA DE TRANSCODIFICACIÓN -->
+      <section class="admin-tab-content" id="tabTranscode">
+        <div class="content-panel aero-window">
+          <div class="window-title"><span class="window-icon">⚙️</span> Cola de transcodificación</div>
+          <div class="window-commandbar">
+            <button class="btn-studio btn-ghost" id="btnRefreshJobs">↻ Actualizar</button>
+          </div>
+          <div class="window-body">
+            <p class="window-intro">Conversión a 1080p H.264 con normalización de audio EBU R128, en tiempo real.</p>
+
+            <div class="transcode-telemetry-banner" id="transcodeTelemetryBanner">
+              <div class="telemetry-stat-card">
+                <span class="telemetry-label">⏱️ Tiempo restante</span>
+                <span class="telemetry-value yellow" id="telemetryEta">--</span>
+                <span class="telemetry-sub" id="telemetryEtaDate">Estimando tiempo de finalización...</span>
+              </div>
+              <div class="telemetry-stat-card">
+                <span class="telemetry-label">⚡ Promedio por capítulo</span>
+                <span class="telemetry-value cyan" id="telemetryAvgEpisode">--</span>
+                <span class="telemetry-sub" id="telemetryAvgDetails">En tiempo real por episodio</span>
+              </div>
+              <div class="telemetry-stat-card">
+                <span class="telemetry-label">🚀 Velocidad de salida</span>
+                <span class="telemetry-value green" id="telemetryRate">--</span>
+                <span class="telemetry-sub" id="telemetryFpsCombined">0 FPS combinados</span>
+              </div>
+              <div class="telemetry-stat-card">
+                <span class="telemetry-label">📦 Progreso global</span>
+                <span class="telemetry-value magenta" id="telemetryGlobalPercent">--%</span>
+                <span class="telemetry-sub" id="telemetryGlobalRatio">0 / 0 completados</span>
+              </div>
+            </div>
+
+            <!-- Trabajos activos (varios hilos en paralelo) -->
+            <div id="activeJobsContainer" class="active-jobs-grid">
+              <div class="active-job-card" id="activeJobCard">
+                <div class="job-status-line">
+                  <span class="pulse-dot green"></span>
+                  <strong id="activeJobTitle">No hay transcodificaciones en curso</strong>
+                </div>
+                <div class="progress-bar-container">
+                  <div class="progress-bar-fill" id="activeJobProgress" style="width: 0%;"></div>
+                </div>
+                <div class="job-details-line">
+                  <span id="activeJobPercent">0%</span>
+                  <span id="activeJobFps">0 fps</span>
+                  <span id="activeJobStatus">En espera de nuevos videos</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Historial y cola de trabajos -->
+            <fieldset class="group-box jobs-history-box">
+              <legend>Cola completa y registro (<span id="jobsTotalCount">0</span>)</legend>
+              <div class="jobs-header-row">
+                <p class="badge-hint">Todos los episodios en cola de conversión y los ya procesados.</p>
+                <div class="jobs-actions">
+                  <input type="search" id="jobsSearchInput" class="admin-input jobs-search" placeholder="🔍 Buscar por episodio o serie...">
+                  <div class="jobs-filter-tabs">
+                    <button class="job-filter-btn active" data-filter="all">Todos (<span id="countFilterAll">0</span>)</button>
+                    <button class="job-filter-btn" data-filter="pending">En cola (<span id="countFilterPending">0</span>)</button>
+                    <button class="job-filter-btn" data-filter="completed">Completados (<span id="countFilterCompleted">0</span>)</button>
+                  </div>
+                </div>
+              </div>
+              <div class="jobs-table-scroll-container">
+                <table class="matrix-table" id="jobsTable">
+                  <thead>
+                    <tr>
+                      <th class="col-status">Estado</th>
+                      <th>Archivo original / título</th>
+                      <th class="col-dest">Destino</th>
+                      <th class="col-progress">Progreso</th>
+                      <th class="col-time">Hora</th>
+                    </tr>
+                  </thead>
+                  <tbody id="jobsTableBody">
+                    <tr><td colspan="5" class="cell-empty">Cargando cola de transcodificación...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </fieldset>
+          </div>
+        </div>
+      </section>
+
+      <!-- DESCARGAS -->
+      
+
+      <!-- PRÓXIMOS CAPÍTULOS -->
+      <section class="admin-tab-content" id="tabEpisodes">
+        <div class="content-panel aero-window">
+          <div class="window-title"><span class="window-icon">🎞️</span> Próximos capítulos</div>
+          <div class="window-commandbar">
+            <button class="btn-studio btn-ghost" id="btnRefreshUpcoming">↻ Actualizar</button>
+            <div class="filter-bar">
+              <button class="pill-btn active" data-hours="24">24 h</button>
+              <button class="pill-btn" data-hours="48">48 h</button>
+              <button class="pill-btn" data-hours="72">3 días</button>
+            </div>
+          </div>
+          <div class="window-body">
+            <p class="window-intro">Qué capítulo sale en cada bloque. En un <strong>estreno</strong>, «Cambiar» elige el capítulo que sale ese día; la serie sigue en orden desde ahí. Las repeticiones y los maratones repiten los estrenos, así que se cambian cambiando el estreno.</p>
+            <div class="table-tools">
+              <input type="search" class="admin-input" id="upcomingSearch" placeholder="Buscar serie o capítulo…" aria-label="Buscar serie o capítulo">
+              <select class="admin-input" id="upcomingKind" aria-label="Tipo de emisión">
+                <option value="">Todos los tipos</option>
+                <option value="premiere">Estrenos</option>
+                <option value="repeat">Repeticiones</option>
+                <option value="marathon">Maratones</option>
+                <option value="random">Al azar</option>
+                <option value="override">Pedidos a mano</option>
+              </select>
+              <span class="badge-hint" id="upcomingStatus"></span>
+            </div>
+            <div class="schedule-table-wrap">
+              <table class="matrix-table" id="upcomingTable">
+                <thead>
+                  <tr>
+                    <th>Hora</th>
+                    <th>Serie</th>
+                    <th>Capítulo</th>
+                    <th>Tipo</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="upcomingBody">
+                  <tr><td colspan="5" class="cell-empty">Cargando…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- MONITOR EN VIVO -->
+      <section class="admin-tab-content" id="tabPlayout">
+        <div class="content-panel aero-window">
+          <div class="window-title"><span class="window-icon">📡</span> Monitor en vivo</div>
+          <div class="window-commandbar">
+            <button class="btn-studio btn-primary" id="btnAdminRescanMedia">↻ Re-escanear biblioteca</button>
+            <a class="btn-studio btn-ghost" href="/live/channel.m3u8" target="_blank" rel="noopener">🔗 Abrir HLS directo</a>
+          </div>
+          <div class="window-body">
+            <p class="window-intro">Supervisión en tiempo real del motor de emisión HLS y los codificadores.</p>
+
+            <div class="playout-monitor-grid">
+              <div class="monitor-video-box">
+                <div class="monitor-video-wrapper">
+                  <video id="adminLiveVideo" autoplay muted playsinline controls></video>
+                </div>
+                <div class="monitor-caption">
+                  <span>● Señal en vivo HLS 1080p</span>
+                  <span id="adminStreamUptime">UPTIME: 00:00:00</span>
+                </div>
+              </div>
+
+              <fieldset class="group-box monitor-controls-card">
+                <legend>Estado del servicio</legend>
+                <div class="status-rows">
+                  <div class="s-row"><span>Estado</span> <strong id="lblPlayoutStatus" class="green">EN EMISIÓN</strong></div>
+                  <div class="s-row"><span>Codificador</span> <strong id="lblEncoder">LIBX264 (1080p)</strong></div>
+                  <div class="s-row"><span>Formato de píxel</span> <strong>YUV420P</strong></div>
+                  <div class="s-row"><span>Marca de agua</span> <strong class="green">Quemada en la señal (X-99)</strong></div>
+                  <div class="s-row"><span>Puerto</span> <strong>3600 (CasaOS)</strong></div>
+                </div>
+              </fieldset>
+            </div>
+
+            <!-- Conmutador master -->
+            <div class="switcher-grid">
+              <fieldset class="group-box switcher-card">
+                <legend><span class="pulse-dot green"></span> Al aire en este momento</legend>
+                <div class="live-program-info">
+                  <div class="live-program-title" id="liveNowTitle">Sintonizando emisión...</div>
+                  <div class="live-program-sub" id="liveNowSub">Cargando segmento...</div>
+                  <div class="live-progress-wrap">
+                    <div class="progress-bar-container">
+                      <div class="progress-bar-fill" id="liveProgressBar" style="width: 0%;"></div>
+                    </div>
+                    <div class="live-progress-times">
+                      <span id="liveElapsed">00:00</span>
+                      <span id="liveProgressPercent">0%</span>
+                      <span id="liveTotalDuration">00:00</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="next-program-box">
+                  <span class="next-label">⏭ Próximo en parrilla</span>
+                  <strong id="liveNextProgramTitle">Calculando siguiente bloque...</strong>
+                </div>
+              </fieldset>
+
+              <fieldset class="group-box switcher-card">
+                <legend>Operaciones de emisión</legend>
+                <div class="switcher-actions-list">
+                  <div class="action-row-box highlight">
+                    <button class="btn-studio btn-primary btn-block" id="btnSyncClockNow" title="Alinea la emisión con la hora en punto (:00) y la media hora (:30)">
+                      🕒 Forzar sincronización a reloj (:00 / :30)
+                    </button>
+                    <div class="sync-row">
+                      <span id="lblClockSyncCountdown" class="sync-countdown">⏳ Próximo cambio: Calculando...</span>
+                      <span id="lblClockSyncSlot" class="sync-slot">Slot: --:-- - --:--</span>
+                    </div>
+                    <span class="action-help">Garantiza que todos los programas comiencen exactamente al minuto :00:00 y :30:00.</span>
+                  </div>
+
+                  <div class="action-row-box">
+                    <button class="btn-studio btn-warning btn-block" id="btnSkipToNextProgram" title="Salta al siguiente programa completo de la parrilla">
+                      ⏭ Adelantar al siguiente programa
+                    </button>
+                    <span class="action-help">Termina el programa actual e inicia de inmediato el siguiente bloque programado.</span>
+                  </div>
+
+                  <div class="action-row-box">
+                    <button class="btn-studio btn-ghost btn-block" id="btnSkipToNextSegment" title="Salta el comercial o cortinilla actual">
+                      ⏭ Saltar segmento (comercial / cortinilla)
+                    </button>
+                    <span class="action-help">Avanza un solo segmento (útil para saltar una tanda o cortinilla).</span>
+                  </div>
+
+                  <div class="action-row-box change-show-box">
+                    <span class="action-label">🔀 Cambiar programa en vivo</span>
+                    <label class="field-label" for="selLiveShowSwitch">1. Serie o programa</label>
+                    <select id="selLiveShowSwitch" class="admin-input">
+                      <option value="">-- Cargando programas disponibles... --</option>
+                    </select>
+                    <label class="field-label" for="selLiveEpisodeSwitch">2. Capítulo a emitir</label>
+                    <select id="selLiveEpisodeSwitch" class="admin-input" disabled>
+                      <option value="">-- Selecciona una serie primero --</option>
+                    </select>
+                    <button class="btn-studio btn-primary btn-block" id="btnPlayShowNow" disabled>
+                      📌 Al aire en el próximo bloque
+                    </button>
+                    <span class="action-help">
+                      Entra exactamente en el siguiente :00 o :30 con su bloque completo (cortinilla + episodio + comerciales), sin cortar el programa en curso. Si eliges un capítulo fuera de orden, la serie no pierde su lugar.
+                    </span>
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- LOCUCIÓN Y CORTINILLAS DINÁMICAS -->
+      <section class="admin-tab-content" id="tabBumpers">
+        <div class="content-panel aero-window">
+          <div class="window-title"><span class="window-icon">🎙️</span> Locución y Cortinillas Dinámicas</div>
+          <div class="window-commandbar">
+            <button class="btn-studio btn-primary" id="btnRefreshBumpers">🔄 Actualizar grabaciones</button>
+            <div class="bumpers-filter-bar">
+              <button class="btn-studio btn-ghost bumpers-filter-btn active" data-filter="all">Todas</button>
+              <button class="btn-studio btn-ghost bumpers-filter-btn" data-filter="voice">🎙️ Audios de Voz</button>
+              <button class="btn-studio btn-ghost bumpers-filter-btn" data-filter="dynamic">🎬 Cortinillas Video</button>
+            </div>
+            <div class="search-box-wrap">
+              <input type="text" id="bumpersSearchInput" class="input-studio" placeholder="Buscar por serie o archivo..." />
+            </div>
+          </div>
+          <div class="window-body">
+            <div class="bumpers-summary-deck">
+              <div class="bumpers-summary-card">
+                <span class="summary-label">🎙️ Voz Activa</span>
+                <strong class="summary-value" id="bumpersStatActiveVoice">El Faraón (eleven_v4)</strong>
+                <small class="summary-desc">Locutor en español colombiano</small>
+              </div>
+              <div class="bumpers-summary-card">
+                <span class="summary-label">💾 Audios en Caché</span>
+                <strong class="summary-value" id="bumpersStatVoiceCount">0</strong>
+                <small class="summary-desc" id="bumpersStatVoiceSize">0 B (0 créditos en reuso)</small>
+              </div>
+              <div class="bumpers-summary-card">
+                <span class="summary-label">🎬 Cortinillas Renderizadas</span>
+                <strong class="summary-value" id="bumpersStatDynamicCount">0</strong>
+                <small class="summary-desc" id="bumpersStatDynamicSize">0 B en 1080p</small>
+              </div>
+              <div class="bumpers-summary-card">
+                <span class="summary-label">🛡️ Respaldo Local</span>
+                <strong class="summary-value" id="bumpersStatBackupVoice">Mario (Audio8_TTS)</strong>
+                <small class="summary-desc">Conmutación automática ante fallas</small>
+              </div>
+            </div>
+
+            <p class="window-intro">
+              Locuciones sintetizadas con ElevenLabs y cortinillas MP4 dinámicas quemadas con GPU.
+              Puedes previsualizar y reproducir cualquier audio o video directamente desde este panel.
+            </p>
+
+            <div class="bumpers-grid" id="bumpersGridContainer">
+              <div class="loading-box">Cargando grabaciones y cortinillas...</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Barra lateral: gadgets de telemetría -->
+    <aside class="aero-sidebar telemetry-deck" aria-label="Telemetría">
+      <div class="metric-card gadget clickable" id="audienceCard" title="Audiencia: quién está viendo y el historial" role="button" tabindex="0">
+        <span class="metric-label">👥 Viendo ahora</span>
+        <span class="metric-value cyan" id="statAudienceNow">–</span>
+        <span class="metric-desc" id="statAudienceSplit">Calculando audiencia...</span>
+        <span class="metric-subdetail" id="statAudienceToday">Pico de hoy: –</span>
+      </div>
+      <div class="metric-card gadget">
+        <span class="metric-label">Programas</span>
+        <span class="metric-value cyan" id="statShowCount">0</span>
+        <span class="metric-desc">Series y bloques activos</span>
+      </div>
+      <div class="metric-card gadget">
+        <span class="metric-label">Capítulos</span>
+        <span class="metric-value yellow" id="statEpisodeCount">0</span>
+        <span class="metric-desc">Listos para emisión</span>
+      </div>
+      <div class="metric-card gadget">
+        <span class="metric-label">Comerciales y bumpers</span>
+        <span class="metric-value green" id="statCommercialCount">0</span>
+        <span class="metric-desc">Tandas de intermedio</span>
+      </div>
+      <div class="metric-card gadget clickable" id="queueMetricCard" title="Ver la cola de transcodificación">
+        <span class="metric-label">Cola de transcodificación</span>
+        <span class="metric-value magenta" id="statQueueCount">0</span>
+        <div class="queue-eta-row">
+          <span class="queue-eta-badge" id="statQueueEta" title="Tiempo estimado para terminar la cola">⏱️ Estimando...</span>
+        </div>
+        <span class="metric-desc" id="statQueueDesc">En espera</span>
+        <span class="metric-subdetail" id="statQueueRate">⚡ Promedio: -- | -- cap/h</span>
+      </div>
+      
+  </div>
+
+  <!-- Barra de tareas: botón Inicio, pestañas y área de notificación -->
+  <nav class="aero-taskbar" aria-label="Secciones">
+    <button class="start-orb" id="btnStartOrb" aria-haspopup="true" aria-expanded="false" aria-controls="startMenu" title="Inicio">
+      <span>X</span>
+    </button>
+    <div class="admin-tabs-nav">
+      <button class="tab-btn active" data-tab="tabShows" title="Series y programas">
+        <span class="tab-icon">🎬</span><span class="tab-label" data-i18n="nav.shows">Series</span>
+      </button>
+      <button class="tab-btn" data-tab="tabCommercials" title="Comerciales y cortinillas">
+        <span class="tab-icon">📼</span><span class="tab-label" data-i18n="nav.commercials">Comerciales</span>
+      </button>
+      <button class="tab-btn" data-tab="tabScheduler" title="Programador de parrilla">
+        <span class="tab-icon">📅</span><span class="tab-label" data-i18n="nav.programming">Parrilla</span>
+      </button>
+      <button class="tab-btn" data-tab="tabEpisodes" title="Próximos capítulos">
+        <span class="tab-icon">🎞️</span><span class="tab-label" data-i18n="nav.episodes">Capítulos</span>
+      </button>
+      <button class="tab-btn" data-tab="tabTranscode" title="Cola de transcodificación">
+        <span class="tab-icon">⚙️</span><span class="tab-label" data-i18n="nav.transcoder">Transcodificación</span>
+      </button>
+      
+      <button class="tab-btn" data-tab="tabPlayout" title="Monitor en vivo">
+        <span class="tab-icon">📡</span><span class="tab-label" data-i18n="nav.live">Monitor</span>
+      </button>
+      <button class="tab-btn" data-tab="tabBumpers" title="Locución y Cortinillas Dinámicas">
+        <span class="tab-icon">🎙️</span><span class="tab-label" data-i18n="nav.bumpers">Locución</span>
+      </button>
+    </div>
+    <div class="taskbar-tray">
+      <span class="tray-live" id="trayLive" title="Estado de la señal"></span>
+      <span class="tray-clock" id="trayClock">--:--</span>
+    </div>
+  </nav>
+
+  <!-- MODAL: SUBIR Y TRANSCODIFICAR VIDEO -->
+  <div class="modal-backdrop" id="uploadModal">
+    <div class="modal-dialog">
+      <div class="modal-dialog-header">
+        <h3>📤 Subir y transcodificar un video</h3>
+        <button class="btn-close-modal" id="btnCloseUploadModal" aria-label="Cerrar">&times;</button>
+      </div>
+
+      <form id="uploadVideoForm" class="modal-dialog-body">
+        <p class="modal-desc">
+          El servidor convierte el video a <strong>1080p H.264 (30 fps)</strong> con audio estéreo normalizado para que se emita sin interrupciones.
+        </p>
+
+        <div class="file-dropzone" id="fileDropzone">
+          <input type="file" id="videoFileInput" name="video" accept="video/*" required hidden>
+          <div class="dropzone-content">
+            <span class="dropzone-icon">📁</span>
+            <strong id="dropzoneText">Arrastra un video aquí o haz clic para seleccionar</strong>
+            <span class="dropzone-hint">MP4, MKV, AVI, MOV, WEBM, TS, FLV (hasta 10 GB)</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label for="uploadTypeSelect">Tipo de contenido</label>
+          <select id="uploadTypeSelect" name="type" class="admin-input">
+            <option value="show" selected>Capítulo de serie / programa</option>
+            <option value="commercial">Comercial retro</option>
+            <option value="bumper">Bumper / cortinilla de estación</option>
+          </select>
+        </div>
+
+        <div id="showFieldsWrapper">
+          <div class="form-row">
+            <label for="uploadShowSelect">Serie o programa de destino</label>
+            <select id="uploadShowSelect" name="showId" class="admin-input">
+              <option value="">Cargando series...</option>
+            </select>
+          </div>
+
+          <div class="form-row-grid">
+            <div class="form-row">
+              <label for="uploadSeasonInput">Temporada</label>
+              <input type="number" id="uploadSeasonInput" name="season" value="1" min="1" class="admin-input">
+            </div>
+            <div class="form-row">
+              <label for="uploadEpisodeInput">Nº de capítulo</label>
+              <input type="number" id="uploadEpisodeInput" name="episode" value="1" min="1" class="admin-input">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label for="uploadTitleInput">Título descriptivo</label>
+          <input type="text" id="uploadTitleInput" name="title" placeholder="Ej: Capítulo 01 - El inicio" class="admin-input" required>
+        </div>
+
+        <div class="upload-progress-box" id="uploadProgressBox" style="display: none;">
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="uploadProgressBar" style="width: 0%;"></div>
+          </div>
+          <span class="progress-text" id="uploadProgressText">Subiendo video al servidor: 0%</span>
+        </div>
+
+        <div class="modal-dialog-footer">
+          <button type="button" class="btn-studio btn-ghost" id="btnCancelUpload">Cancelar</button>
+          <button type="submit" class="btn-studio btn-primary" id="btnSubmitUpload">🚀 Subir y transcodificar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CREAR NUEVA SERIE / PROGRAMA -->
+  <div class="modal-backdrop" id="createShowModal">
+    <div class="modal-dialog">
+      <div class="modal-dialog-header">
+        <h3>🎬 Crear serie o programa</h3>
+        <button class="btn-close-modal" id="btnCloseCreateShowModal" aria-label="Cerrar">&times;</button>
+      </div>
+
+      <form id="createShowForm" class="modal-dialog-body">
+        <div class="form-row">
+          <label for="newShowTitle">Nombre del programa o serie</label>
+          <input type="text" id="newShowTitle" placeholder="Ej: Los Simpson (Clásico)" class="admin-input" required>
+        </div>
+
+        <div class="form-row-grid">
+          <div class="form-row">
+            <label for="newShowCategory">Categoría</label>
+            <select id="newShowCategory" class="admin-input">
+              <option value="Anime de Culto">Anime de Culto</option>
+              <option value="Animación Clásica" selected>Animación Clásica</option>
+              <option value="Música Electronic">Música Electronic</option>
+              <option value="Especial Retro">Especial Retro</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label for="newShowColor">Color distintivo</label>
+            <select id="newShowColor" class="admin-input">
+              <option value="#00f0ff" selected>Cian</option>
+              <option value="#ff007f">Magenta</option>
+              <option value="#ffe600">Amarillo</option>
+              <option value="#39ff14">Verde</option>
+              <option value="#ff8800">Naranja</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label for="newShowDesc">Descripción breve</label>
+          <textarea id="newShowDesc" rows="3" placeholder="Información del programa para la guía EPG..." class="admin-input"></textarea>
+        </div>
+
+        <div class="modal-dialog-footer">
+          <button type="button" class="btn-studio btn-ghost" id="btnCancelCreateShow">Cancelar</button>
+          <button type="submit" class="btn-studio btn-primary">Guardar serie</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: IMPORTAR DE GRABACIONES DEL SERVIDOR -->
+  <div class="modal-backdrop" id="importModal">
+    <div class="modal-dialog">
+      <div class="modal-dialog-header">
+        <h3>📥 Importar desde el servidor</h3>
+        <button class="btn-close-modal" id="btnCloseImportModal" aria-label="Cerrar">&times;</button>
+      </div>
+
+      <form id="importRecordingForm" class="modal-dialog-body">
+        <p class="modal-desc">
+          Elige un archivo colocado en la carpeta local de ingesta del servidor (./media/ingest) para agregarlo al catálogo.
+        </p>
+
+        <div class="form-row">
+          <label for="importSourceSelect">Ubicación en el servidor</label>
+          <select id="importSourceSelect" class="admin-input">
+            <option value="mkv" selected>📂 Carpeta local de ingesta (media/ingest)</option>
+            <option value="recordings">📼 Grabaciones locales</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label for="importFileSelect">Archivo</label>
+          <select id="importFileSelect" class="admin-input" required>
+            <option value="">Cargando archivos del servidor...</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label for="importTypeSelect">Tipo de contenido</label>
+          <select id="importTypeSelect" class="admin-input">
+            <option value="show" selected>Capítulo de serie / programa</option>
+            <option value="commercial">Comercial retro</option>
+            <option value="bumper">Bumper / cortinilla</option>
+          </select>
+        </div>
+
+        <div id="importShowFieldsWrapper">
+          <div class="form-row">
+            <label for="importShowSelect">Serie o programa de destino</label>
+            <select id="importShowSelect" class="admin-input">
+              <option value="">Cargando series...</option>
+            </select>
+          </div>
+
+          <div class="form-row-grid">
+            <div class="form-row">
+              <label for="importSeasonInput">Temporada</label>
+              <input type="number" id="importSeasonInput" value="1" min="1" class="admin-input">
+            </div>
+            <div class="form-row">
+              <label for="importEpisodeInput">Nº de capítulo</label>
+              <input type="number" id="importEpisodeInput" value="1" min="1" class="admin-input">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label for="importTitleInput">Título en la guía EPG</label>
+          <input type="text" id="importTitleInput" placeholder="Ej: Bloque Especial Home Channel 1999" class="admin-input" required>
+        </div>
+
+        <div class="modal-dialog-footer">
+          <button type="button" class="btn-studio btn-ghost" id="btnCancelImport">Cancelar</button>
+          <button type="submit" class="btn-studio btn-primary">🚀 Importar y agregar a la emisión</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CODIFICACIÓN E IMPORTACIÓN EN LOTE -->
+  <div class="admin-modal" id="batchImportModal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-dialog-header">
+        <div class="modal-title-box">
+          <span class="modal-icon">⚡</span>
+          <div>
+            <h3>Codificar serie completa</h3>
+            <span class="modal-subtitle">Encola todos los capítulos de una serie local en un solo clic</span>
+          </div>
+        </div>
+        <button class="btn-close-modal" id="btnCloseBatchImportModal" aria-label="Cerrar">&times;</button>
+      </div>
+
+      <div class="modal-dialog-body">
+        <p class="modal-desc">
+          Detecta los videos en la carpeta de ingesta local (<code>media/ingest</code>), numera los episodios y los añade a la cola de emisión.
+        </p>
+
+        <div class="form-row-grid">
+          <div class="form-row">
+            <label for="batchShowSelect">Serie o programa de destino</label>
+            <select id="batchShowSelect" class="admin-input">
+              <option value="__new__">+ Crear nueva serie...</option>
+            </select>
+          </div>
+          <div class="form-row" id="batchNewShowTitleWrapper">
+            <label for="batchNewShowTitleInput">Nombre de la nueva serie</label>
+            <input type="text" id="batchNewShowTitleInput" placeholder="Ej: Serie A, Documental Naturaleza..." class="admin-input">
+          </div>
+        </div>
+
+        <div class="form-row-grid grid-season">
+          <div class="form-row">
+            <label for="batchSeasonInput">Temporada</label>
+            <input type="number" id="batchSeasonInput" value="1" min="1" class="admin-input">
+          </div>
+          <div class="form-row">
+            <label for="batchFilterInput">Filtrar archivos de video</label>
+            <div class="input-with-button">
+              <input type="text" id="batchFilterInput" placeholder="Ej. 'Copia de' o 'CBB'" class="admin-input">
+              <button type="button" class="btn-micro" id="btnBatchSelectAll">✓ Todos</button>
+              <button type="button" class="btn-micro" id="btnBatchDeselectAll">✗ Ninguno</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="list-head">
+            <label>Capítulos detectados (<span id="batchCountSelected">0</span> seleccionados)</label>
+            <span class="list-size" id="batchTotalSizeMB">0 MB</span>
+          </div>
+          <div id="batchItemsContainer" class="inset-box stack-list">
+            <div class="muted center">Cargando archivos de video...</div>
+          </div>
+        </div>
+
+        <div class="modal-dialog-footer">
+          <button type="button" class="btn-studio btn-ghost" id="btnCancelBatchImportModal">Cerrar</button>
+          <button type="button" class="btn-studio btn-primary" id="btnStartBatchImport">🚀 Encolar serie completa</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: AUDIENCIA -->
+  <div class="modal-backdrop" id="audienceModal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-dialog-header">
+        <div class="modal-title-box">
+          <span class="modal-icon">👥</span>
+          <div>
+            <h3>Audiencia</h3>
+            <span class="modal-subtitle">Quién está viendo la señal y cómo ha ido</span>
+          </div>
+        </div>
+        <button class="btn-close-modal" id="btnCloseAudienceModal" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-dialog-body">
+        <div class="audience-toolbar">
+          <div class="jobs-filter-tabs" id="audienceRange" role="tablist" aria-label="Periodo">
+            <button class="job-filter-btn active" data-range="24h" role="tab">Últimas 24 h</button>
+            <button class="job-filter-btn" data-range="7d" role="tab">7 días</button>
+            <button class="job-filter-btn" data-range="30d" role="tab">30 días</button>
+          </div>
+          <button class="btn-micro" id="btnAudienceTable" aria-pressed="false">▦ Ver como tabla</button>
+        </div>
+
+        <div class="audience-stats" id="audienceStats"></div>
+
+        <h4 class="section-title" id="audienceChartTitle">Espectadores (promedio cada 5 min)</h4>
+        <div class="audience-chart" id="audienceChart" role="img" aria-label="Gráfica de espectadores"></div>
+        <div class="schedule-table-wrap audience-table" id="audienceTableWrap" hidden>
+          <table class="matrix-table">
+            <thead><tr><th>Hora</th><th class="num">Espectadores</th><th class="num">Pico</th><th class="num">Web</th><th class="num">TV / IPTV</th><th class="num">Radio</th><th>Al aire</th></tr></thead>
+            <tbody id="audienceTableBody"></tbody>
+          </table>
+        </div>
+
+        <h4 class="section-title">Programas con más audiencia</h4>
+        <div class="audience-programs" id="audiencePrograms"></div>
+
+        <p class="footnote">
+          Se cuenta cada reproductor que está recibiendo la señal (la página web, Smart TV, VLC o apps IPTV), sin guardar IPs.
+          Varias personas frente a la misma pantalla cuentan como una; dos pestañas del mismo navegador, también.
+          La radio se cuenta aparte. «Viendo ahora» se actualiza cada 15 s.
+        </p>
+
+        <div class="modal-dialog-footer">
+          <button type="button" class="btn-studio btn-primary" id="btnCloseAudienceModal2">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: AGRUPAR TEMPORADAS -->
+  <div class="modal-backdrop" id="groupsModal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-dialog-header">
+        <h3>🧩 Agrupar temporadas</h3>
+        <button class="btn-close-modal" id="btnCloseGroupsModal" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-dialog-body">
+        <p class="modal-desc">
+          Las series de un mismo <strong>grupo</strong> comparten horario y se emiten en orden: cuando termina una, sigue la siguiente.
+          <strong>Independiente</strong> = la serie tiene su propio horario. <strong>Automático</strong> = solo se agrupan los títulos "Serie - Temporada N".
+        </p>
+        <div class="schedule-table-wrap tall">
+          <table class="matrix-table">
+            <thead>
+              <tr><th>Serie</th><th>Grupo</th><th>Orden</th></tr>
+            </thead>
+            <tbody id="groupsBody"></tbody>
+          </table>
+        </div>
+        <div class="modal-dialog-footer">
+          <button type="button" class="btn-studio btn-ghost" id="btnCancelGroups">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CAMBIAR CAPÍTULO -->
+  <div class="modal-backdrop" id="episodePickModal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-dialog-header">
+        <h3>🎞️ Cambiar capítulo</h3>
+        <button class="btn-close-modal" id="btnCloseEpisodePick" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-dialog-body">
+        <p class="modal-desc" id="episodePickDesc"></p>
+        <input type="search" class="admin-input" id="episodePickSearch" placeholder="Buscar por número o título…" aria-label="Buscar capítulo">
+        <div class="schedule-table-wrap tall">
+          <table class="matrix-table episode-pick-table">
+            <thead><tr><th class="num">#</th><th>Capítulo</th><th class="num">Duración</th><th></th></tr></thead>
+            <tbody id="episodePickBody"></tbody>
+          </table>
+        </div>
+        <div class="modal-dialog-footer">
+          <button type="button" class="btn-studio btn-ghost" id="btnCancelEpisodePick">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PROPUESTA DE PARRILLA -->
+  <div class="modal-backdrop" id="proposalModal">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-dialog-header">
+        <h3>📋 Propuesta de parrilla semanal</h3>
+        <button class="btn-close-modal" id="btnCloseProposalModal" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-dialog-body">
+        <p class="modal-desc" id="proposalMeta">Cargando propuesta...</p>
+        <ul class="proposal-warnings" id="proposalWarnings"></ul>
+
+        <div class="schedule-table-wrap short">
+          <table class="matrix-table">
+            <thead>
+              <tr><th>Serie</th><th>En emisión</th><th>Emisiones</th><th>Le alcanza para</th></tr>
+            </thead>
+            <tbody id="proposalSagasBody"></tbody>
+          </table>
+        </div>
+
+        <h4 class="section-title proposal-subtitle">Parrilla propuesta <small>(contorno amarillo = cambia respecto a la actual · tus reglas se mantienen)</small></h4>
+        <div class="week-calendar-wrap">
+          <div class="week-calendar" id="proposalCalendar"></div>
+        </div>
+
+        <div class="modal-dialog-footer">
+          <button type="button" class="btn-studio btn-ghost" id="btnDiscardProposal">Descartar</button>
+          <button type="button" class="btn-studio btn-primary" id="btnAcceptProposal">✔ Aceptar (se aplica en el próximo bloque)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Editor de reglas de la parrilla -->
+  <div class="modal-backdrop" id="ruleModal">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-dialog-header">
+        <h3 id="ruleModalTitle">NUEVA REGLA</h3>
+        <button class="btn-close-modal" id="btnCloseRuleModal" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-dialog-body">
+        <form id="ruleForm" class="rule-form">
+          <p class="modal-desc" id="ruleSourceNote"></p>
+          <label>Tipo
+            <select class="admin-input" id="ruleKind">
+              <option value="show">Serie (estreno o repetición según el día)</option>
+              <option value="marathon">Maratón (capítulos de la semana seguidos)</option>
+              <option value="off_air">Cierre de emisión</option>
+            </select>
+          </label>
+          <label id="ruleTargetLabel">Serie
+            <select class="admin-input" id="ruleTarget"></select>
+          </label>
+          <div class="rule-days">
+            <span>Días</span>
+            <div class="rule-day-chips" id="ruleDays"></div>
+            <div class="rule-day-presets">
+              <button type="button" class="btn-micro" data-preset="weekdays">L-V</button>
+              <button type="button" class="btn-micro" data-preset="weekend">Fin de semana</button>
+              <button type="button" class="btn-micro" data-preset="all">Todos</button>
+            </div>
+          </div>
+          <div class="rule-row">
+            <label>Hora
+              <select class="admin-input" id="ruleStart"></select>
+            </label>
+            <label>Duración
+              <select class="admin-input" id="ruleSlots"></select>
+            </label>
+          </div>
+          <label>Nota (opcional)
+            <input class="admin-input" id="ruleNote" maxlength="200" placeholder="Ej.: estreno especial de temporada">
+          </label>
+          <div class="modal-dialog-footer">
+            <button type="button" class="btn-studio btn-danger-outline" id="btnDeleteRule" hidden>🗑 Eliminar</button>
+            <button type="button" class="btn-studio btn-ghost" id="btnCancelRule">Cancelar</button>
+            <button type="submit" class="btn-studio btn-primary" id="btnSaveRule">💾 Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js"></script>
+  <script type="module" src="/admin/js/main.js?v=179310860"></script>
+</body>
+</html>

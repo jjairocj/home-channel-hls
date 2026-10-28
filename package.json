@@ -1,0 +1,35 @@
+{
+  "name": "home-channel-hls",
+  "version": "1.0.0",
+  "description": "Open-source 24/7 linear broadcast playout engine with HLS streaming, EPG, dynamic interstitials, and web Master Control.",
+  "author": "Jhon Jairo Cruz <jhon_jairo@live.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jjairocj/home-channel-hls.git"
+  },
+  "keywords": [
+    "hls",
+    "linear-tv",
+    "playout",
+    "broadcast",
+    "ffmpeg",
+    "epg",
+    "streamer",
+    "master-control"
+  ],
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "multer": "^2.4.0",
+    "pdfkit": "^0.17.2",
+    "pg": "^8.23.1"
+  }
+}
