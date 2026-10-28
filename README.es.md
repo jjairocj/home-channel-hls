@@ -6,19 +6,19 @@
 [![Licencia: MIT](https://img.shields.io/badge/Licencia-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-22.x_LTS-green.svg)](https://nodejs.org/)
 [![Docker](https://img.shields.io/badge/Docker-Listo-2496ED.svg)](https://www.docker.com/)
-[![FFmpeg](https://img.shields.io/badge/FFmpeg-Aceleraci%C3%B3n_Hardware-007808.svg)](https://ffmpeg.org/)
 [![i18n](https://img.shields.io/badge/i18n-English_%7C_Espa%C3%B1ol-orange.svg)](./public/locales/)
 
-[**[Read in English]**](./README.md) • [**[Guía para Agentes de IA (AGENTS.md)]**](./AGENTS.md) • [**[Wiki de Documentación Completa]**](./docs/es/01-arquitectura.md)
+[**[Read in English]**](./README.md) • [**[Guía para Desarrolladores e IA (AGENTS.md)]**](./AGENTS.md) • [**[Wiki de Documentación Completa]**](./docs/es/01-arquitectura.md)
 
 ---
 
 ## ✨ Características Principales
 
-- 🛰️ **Emisión Continua HLS 24/7:** Transmisión lineal fluida sin desfases ni pausas molestas, compatible directamente con navegadores web, Smart TVs, Android TV, Apple TV y aplicaciones IPTV (VLC, Kodi, TiviMate).
+- 🛰️ **Emisión Continua HLS 24/7:** Transmisión lineal fluida de arranque rápido y baja latencia (low-buffer), compatible directamente con navegadores web, Smart TVs, Android TV, Apple TV y aplicaciones IPTV (VLC, Kodi, TiviMate).
 - 🕒 **Sincronización Estricta de Reloj:** Bloques horarios exactos alineados a la hora en punto (`:00`) y a la media hora (`:30`). La programación nunca se desfasa a lo largo del día.
 - 📼 **Compositor Inteligente de Cortes Comerciales:** Llena dinámicamente las pausas entre episodios con cortinillas de apertura (*"Estás viendo..."*), comerciales sin repetición consecutiva, idents temáticos y adelantos de cierre (*"A continuación..."*).
 - 🎙️ **Carteleras y Locución Dinámica:** Genera gráficos vectoriales SVG en tiempo real y anuncia los próximos programas mediante voces neuronales (ElevenLabs API o síntesis local con edge-tts).
+- 📻 **Emisora de Radio FM 24/7 Integrada:** Flujo de audio HLS dedicado con locutor DJ neuronal automatizado, rotación musical sin repetición consecutiva de artistas, jingles periódicos y sintonizador web retro estilo Hi-Fi de los 90 con display digital RDS.
 - 📅 **Parrilla Semanal y EPG por Reglas:** Planificador visual de programación, avance automático de capítulos diarios, maratones de fin de semana y exportación de guía XMLTV (`/epg.xml`).
 - ⚡ **Aceleración por Hardware Multiplataforma:** Soporte para NVIDIA NVENC, Intel QuickSync/VAAPI, Apple Silicon VideoToolbox y respaldo ultra-eficiente por CPU (`libx264`).
 - 🎛️ **Estudio Web Master Control:** Panel de administración profesional para monitorear la señal en tiempo real, saltar contenidos al aire, gestionar la cola de codificación y ver métricas de audiencia.
@@ -55,7 +55,8 @@ docker compose up -d
 ¡Listo! Tu estación de televisión está al aire:
 - 📺 **Reproductor Web Público:** [http://localhost:3000](http://localhost:3000)
 - 🎛️ **Master Control Studio:** [http://localhost:3000/admin](http://localhost:3000/admin)
-- 📡 **Flujo HLS en Vivo:** `http://localhost:3000/live/channel.m3u8`
+- 📡 **Flujo TV HLS en Vivo:** `http://localhost:3000/live/channel.m3u8`
+- 📻 **Flujo Radio FM en Vivo:** `http://localhost:3000/live/radio/main/radio.m3u8`
 - 📑 **Guía de TV XMLTV (EPG):** `http://localhost:3000/epg.xml`
 - 📋 **Lista IPTV M3U:** `http://localhost:3000/channel.m3u`
 
@@ -80,10 +81,10 @@ docker compose up -d
                                      Tubería FFmpeg en Tiempo Real
                                  (NVENC / VAAPI / VideoToolbox / CPU)
                                                  |
-                                  +--------------v--------------+
-                                  |   Disco en RAM (/app/stream)|
-                                  |   HLS: channel.m3u8 + .ts   |
-                                  +--------------+--------------+
+                                   +--------------v--------------+
+                                   |   Disco en RAM (/app/stream)|
+                                   |   HLS: channel.m3u8 + .ts   |
+                                   +--------------+--------------+
                                                  |
                                                  v
                                +----------------------------------+
@@ -91,6 +92,20 @@ docker compose up -d
                                |    (VLC, Kodi, TiviMate, Web)    |
                                +----------------------------------+
 ```
+
+---
+
+## 📻 Emisora de Radio FM 24/7 Integrada
+
+Además de la emisión televisiva, Home Channel HLS incluye una estación de radio FM automatizada e independiente:
+
+- **Flujo de Audio HLS Dedicado:** Transmite audio puro (`/live/radio/main/radio.m3u8`) reproducible en navegadores web, dispositivos móviles y clientes IPTV.
+- **Sintonizador Web Retro Hi-Fi:** El reproductor web permite conmutar entre TV y Radio. Incluye un dial analógico con aguja de frecuencia, indicadores de señal luminosos, potenciómetro de volumen y marquesina digital RDS con título y artista en tiempo real.
+- **DJ Neuronal Automatizado:** Genera presentaciones habladas de las canciones utilizando síntesis de voz neuronal (`edge-tts` o ElevenLabs), con redacción dinámica y limpieza de guiones.
+- **Rotación Musical Inteligente:** Algoritmo que evita la repetición consecutiva del mismo artista (`shuffleAvoidingArtist`) e introduce cortinillas (jingles) de identificación cada 4 pistas.
+- **Estructura de Carpetas:**
+  - `media/radio/music/` — Archivos de música (`.mp3`, `.flac`, `.m4a`, `.wav`).
+  - `media/radio/jingles/` — Identificadores de estación y efectos de sonido.
 
 ---
 
@@ -132,9 +147,25 @@ Home Channel HLS utiliza un sistema modular de diccionarios JSON en `public/loca
 
 ---
 
-## 🤖 Soporte para Asistentes de IA (`AGENTS.md`)
+## 🧪 Suite de Pruebas Automatizadas y Calidad
 
-Este repositorio cuenta con un documento especializado para agentes de inteligencia artificial. Si utilizas ChatGPT, Claude, Cursor, Antigravity o GitHub Copilot para personalizar o gestionar tu canal, indícale al asistente que lea [`AGENTS.md`](./AGENTS.md) para comprender al instante toda la arquitectura y procedimientos de operación.
+Una transmisión continua 24/7 requiere cero desfase, rotación limpia de segmentos y sincronización estricta. El proyecto cuenta con **más de 110 pruebas automatizadas** que validan:
+- Matemática de reloj y cumplimiento de fronteras horarias (`:00` y `:30`).
+- Mantenimiento del búfer HLS, prioridad de codificación y fallback de hardware.
+- Composición de cortes comerciales y reglas de enfriamiento anti-repetición.
+- Escape de caracteres y precisión de formato en la guía XMLTV EPG.
+- Normalización de sonoridad (EBU R128) y selección preferencial de pistas de audio.
+
+Ejecuta las pruebas en cualquier momento:
+```bash
+npm test
+```
+
+---
+
+## 🤖 Guía para Desarrolladores y Asistentes de IA (`AGENTS.md`)
+
+Este repositorio incluye un manual técnico exhaustivo en [`AGENTS.md`](./AGENTS.md). Tanto para desarrolladores humanos que deseen auditar la arquitectura como para asistentes de código (ChatGPT, Claude, Cursor, Antigravity, Copilot), [`AGENTS.md`](./AGENTS.md) detalla los contratos del esquema de base de datos, algoritmos de sincronización y tuberías de transcodificación.
 
 ---
 

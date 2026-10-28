@@ -9,16 +9,17 @@
 [![FFmpeg](https://img.shields.io/badge/FFmpeg-Hardware_Accelerated-007808.svg)](https://ffmpeg.org/)
 [![i18n](https://img.shields.io/badge/i18n-English_%7C_Espa%C3%B1ol-orange.svg)](./public/locales/)
 
-[**[Leer en Español]**](./README.es.md) • [**[AI Agent Guide (AGENTS.md)]**](./AGENTS.md) • [**[Full Documentation Wiki]**](./docs/en/01-architecture.md)
+[**[Leer en Español]**](./README.es.md) • [**[Developer & AI Guide (AGENTS.md)]**](./AGENTS.md) • [**[Full Documentation Wiki]**](./docs/en/01-architecture.md)
 
 ---
 
 ## ✨ Features
 
-- 🛰️ **24/7 Continuous HLS Stream:** Zero-buffer linear broadcasting with instant playback on web browsers, Smart TVs, Android TV, Apple TV, and IPTV apps (VLC, Kodi, TiviMate).
+- 🛰️ **24/7 Continuous HLS Stream:** Fast-start, low-buffer linear broadcasting with smooth playback on web browsers, Smart TVs, Android TV, Apple TV, and IPTV apps (VLC, Kodi, TiviMate).
 - 🕒 **Strict Clock-Aligned Slots:** Automatically synchronizes shows to exact half-hour and hour marks (`:00` and `:30`). Never drifts across the broadcast day.
 - 📼 **Intelligent Interstitial Composer:** Dynamically fills commercial breaks between episodes with intro bumpers (*"You're watching..."*), non-repeating ad spots, station idents, and closing previews (*"Coming up next..."*).
 - 🎙️ **Dynamic Next-Up Graphics & Voiceovers:** Renders on-the-fly vector SVG billboards and announces upcoming shows using neural TTS (ElevenLabs API or local edge-tts).
+- 📻 **Integrated 24/7 FM Radio Station:** Dedicated audio HLS stream with automated neural DJ voice tracks, anti-repetition artist rotation, periodic station jingles, and a retro 90s Hi-Fi tuner web interface with live RDS track metadata.
 - 📅 **Rule-Based Weekly Grid & EPG:** Intuitive drag-and-drop schedule planner, automated daily episode progression, weekend marathons, and XMLTV EPG export (`/epg.xml`).
 - ⚡ **Multi-Platform Hardware Acceleration:** Supports NVIDIA NVENC, Intel QuickSync/VAAPI, Apple Silicon VideoToolbox, and high-efficiency CPU fallback (`libx264`).
 - 🎛️ **Web Master Control Studio:** Desktop-grade admin control room to monitor stream health, override items on air, manage transcode queues, and inspect viewer analytics.
@@ -55,7 +56,8 @@ docker compose up -d
 That's it! Your station is now live:
 - 📺 **Public TV Player:** [http://localhost:3000](http://localhost:3000)
 - 🎛️ **Master Control Studio:** [http://localhost:3000/admin](http://localhost:3000/admin)
-- 📡 **Live HLS Stream:** `http://localhost:3000/live/channel.m3u8`
+- 📡 **Live TV HLS Stream:** `http://localhost:3000/live/channel.m3u8`
+- 📻 **24/7 FM Radio Stream:** `http://localhost:3000/live/radio/main/radio.m3u8`
 - 📑 **XMLTV EPG Guide:** `http://localhost:3000/epg.xml`
 - 📋 **IPTV M3U Playlist:** `http://localhost:3000/channel.m3u`
 
@@ -91,6 +93,20 @@ That's it! Your station is now live:
                                |    (VLC, Kodi, TiviMate, Web)    |
                                +----------------------------------+
 ```
+
+---
+
+## 📻 Integrated 24/7 FM Radio Engine
+
+In addition to linear television broadcast, Home Channel HLS includes a self-contained, automated 24/7 FM radio station:
+
+- **Standalone Audio HLS Stream:** Broadcasts clean audio streaming (`/live/radio/main/radio.m3u8`) playable in any browser, mobile player, or IPTV client.
+- **Retro 90s Hi-Fi Tuner Interface:** Switch between TV and Radio modes in the web player. Includes an authentic analog frequency dial, backlit signal indicators, volume knob, and real-time RDS digital marquee.
+- **Automated Neural DJ & Voice Tracks:** Features an automated radio DJ that writes track intros and announces song titles/artists using neural voice synthesis (`edge-tts` or ElevenLabs), with clean script sanitization.
+- **Smart Rotation & Cooldowns:** Anti-repetition algorithm ensures artists are never played back-to-back (`shuffleAvoidingArtist`) and schedules station identification jingles every 4 tracks.
+- **Directory Structure:**
+  - `media/radio/music/` — Place your music tracks (`.mp3`, `.flac`, `.m4a`, `.wav`).
+  - `media/radio/jingles/` — Station sweeps, sound effects, and ID liners.
 
 ---
 
@@ -132,9 +148,25 @@ Home Channel HLS supports multiple languages via simple JSON dictionaries locate
 
 ---
 
-## 🤖 AI Assistant Support (`AGENTS.md`)
+## 🧪 Comprehensive Test Suite & Quality Assurance
 
-This repository is built with first-class AI Agent compatibility. If you are using ChatGPT, Claude, Cursor, Antigravity, or Copilot to manage or customize your channel, point the assistant to [`AGENTS.md`](./AGENTS.md) for full context on architecture, database schema, and operational commands.
+Reliable 24/7 broadcast requires zero drift, stable segment rotation, and strict clock synchronization. The codebase includes a comprehensive suite of **110+ automated tests** covering:
+- Clock arithmetic and slot boundary enforcement (`:00` and `:30`).
+- Seamless HLS buffer maintenance, transcode queue priority, and hardware fallback.
+- Commercial break composition and anti-repetition cooldown math.
+- XMLTV EPG character escaping and time format precision.
+- Audio loudness normalization (EBU R128) and multilingual audio track selection.
+
+Run the test suite at any time:
+```bash
+npm test
+```
+
+---
+
+## 🤖 Developer & AI Assistant Guidelines (`AGENTS.md`)
+
+This repository includes a dedicated architecture manual in [`AGENTS.md`](./AGENTS.md). Whether you are auditing code by hand or using developer tooling and coding assistants (ChatGPT, Claude, Cursor, Antigravity, Copilot), [`AGENTS.md`](./AGENTS.md) provides comprehensive contracts on database schemas, clock synchronization algorithms, and media ingestion workflows.
 
 ---
 
