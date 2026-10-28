@@ -14,11 +14,11 @@
 
 ## ✨ Características Principales
 
-- 🛰️ **Emisión Continua HLS 24/7:** Transmisión lineal fluida de arranque rápido y baja latencia (low-buffer), compatible directamente con navegadores web, Smart TVs, Android TV, Apple TV y aplicaciones IPTV (VLC, Kodi, TiviMate).
+- 🛰️ **Emisión Continua HLS 24/7:** Transmisión lineal fluida, de arranque rápido y búfer reducido, compatible directamente con navegadores web, Smart TVs, Android TV, Apple TV y aplicaciones IPTV (VLC, Kodi, TiviMate).
 - 🕒 **Sincronización Estricta de Reloj:** Bloques horarios exactos alineados a la hora en punto (`:00`) y a la media hora (`:30`). La programación nunca se desfasa a lo largo del día.
 - 📼 **Compositor Inteligente de Cortes Comerciales:** Llena dinámicamente las pausas entre episodios con cortinillas de apertura (*"Estás viendo..."*), comerciales sin repetición consecutiva, idents temáticos y adelantos de cierre (*"A continuación..."*).
 - 🎙️ **Carteleras y Locución Dinámica:** Genera gráficos vectoriales SVG en tiempo real y anuncia los próximos programas mediante voces neuronales (ElevenLabs API o síntesis local con edge-tts).
-- 📻 **Emisora de Radio FM 24/7 Integrada:** Flujo de audio HLS dedicado con locutor DJ neuronal automatizado, rotación musical sin repetición consecutiva de artistas, jingles periódicos y sintonizador web retro estilo Hi-Fi de los 90 con display digital RDS.
+- 📻 **Emisora de Radio Estilo FM 24/7 Integrada:** Flujo de audio HLS dedicado con presentaciones de DJ automatizadas (escritas con LLM local vía Ollama y sintetizadas con edge-tts), rotación musical sin repetición consecutiva de artistas, jingles periódicos y sintonizador web retro estilo Hi-Fi de los 90 con display digital RDS.
 - 📅 **Parrilla Semanal y EPG por Reglas:** Planificador visual de programación, avance automático de capítulos diarios, maratones de fin de semana y exportación de guía XMLTV (`/epg.xml`).
 - ⚡ **Aceleración por Hardware Multiplataforma:** Soporte para NVIDIA NVENC, Intel QuickSync/VAAPI, Apple Silicon VideoToolbox y respaldo ultra-eficiente por CPU (`libx264`).
 - 🎛️ **Estudio Web Master Control:** Panel de administración profesional para monitorear la señal en tiempo real, saltar contenidos al aire, gestionar la cola de codificación y ver métricas de audiencia.
@@ -56,7 +56,7 @@ docker compose up -d
 - 📺 **Reproductor Web Público:** [http://localhost:3000](http://localhost:3000)
 - 🎛️ **Master Control Studio:** [http://localhost:3000/admin](http://localhost:3000/admin)
 - 📡 **Flujo TV HLS en Vivo:** `http://localhost:3000/live/channel.m3u8`
-- 📻 **Flujo Radio FM en Vivo:** `http://localhost:3000/live/radio/main/radio.m3u8`
+- 📻 **Flujo Radio Estilo FM en Vivo:** `http://localhost:3000/live/radio/main/radio.m3u8`
 - 📑 **Guía de TV XMLTV (EPG):** `http://localhost:3000/epg.xml`
 - 📋 **Lista IPTV M3U:** `http://localhost:3000/channel.m3u`
 
@@ -95,13 +95,13 @@ docker compose up -d
 
 ---
 
-## 📻 Emisora de Radio FM 24/7 Integrada
+## 📻 Emisora de Radio Estilo FM 24/7 Integrada
 
-Además de la emisión televisiva, Home Channel HLS incluye una estación de radio FM automatizada e independiente:
+Además de la emisión televisiva, Home Channel HLS incluye una estación de radio automatizada e independiente al estilo FM:
 
 - **Flujo de Audio HLS Dedicado:** Transmite audio puro (`/live/radio/main/radio.m3u8`) reproducible en navegadores web, dispositivos móviles y clientes IPTV.
 - **Sintonizador Web Retro Hi-Fi:** El reproductor web permite conmutar entre TV y Radio. Incluye un dial analógico con aguja de frecuencia, indicadores de señal luminosos, potenciómetro de volumen y marquesina digital RDS con título y artista en tiempo real.
-- **DJ Neuronal Automatizado:** Genera presentaciones habladas de las canciones utilizando síntesis de voz neuronal (`edge-tts` o ElevenLabs), con redacción dinámica y limpieza de guiones.
+- **DJ automatizado:** Las presentaciones las escribe un LLM local vía Ollama (con plantillas de respaldo si no está configurado), se sintetizan con voces neuronales de edge-tts y se limpian antes de locutarlas.
 - **Rotación Musical Inteligente:** Algoritmo que evita la repetición consecutiva del mismo artista (`shuffleAvoidingArtist`) e introduce cortinillas (jingles) de identificación cada 4 pistas.
 - **Estructura de Carpetas:**
   - `media/radio/music/` — Archivos de música (`.mp3`, `.flac`, `.m4a`, `.wav`).
@@ -149,12 +149,15 @@ Home Channel HLS utiliza un sistema modular de diccionarios JSON en `public/loca
 
 ## 🧪 Suite de Pruebas Automatizadas y Calidad
 
-Una transmisión continua 24/7 requiere cero desfase, rotación limpia de segmentos y sincronización estricta. El proyecto cuenta con **más de 110 pruebas automatizadas** que validan:
-- Matemática de reloj y cumplimiento de fronteras horarias (`:00` y `:30`).
-- Mantenimiento del búfer HLS, prioridad de codificación y fallback de hardware.
-- Composición de cortes comerciales y reglas de enfriamiento anti-repetición.
-- Escape de caracteres y precisión de formato en la guía XMLTV EPG.
-- Normalización de sonoridad (EBU R128) y selección preferencial de pistas de audio.
+Una transmisión lineal continua 24/7 requiere precisión matemática, planificación determinista y tolerancia a fallos. El proyecto cuenta con **más de 110 pruebas automatizadas** que validan:
+- **Aritmética de reloj y franjas horarias estrictas:** Límites exactos de `:00` y `:30`, cambio de día de transmisión (corte a las 06:00) y duración de bloques (`test/core.test.js`).
+- **Composición de tandas comerciales:** Presupuesto exacto de bloques de 30/60 min, selección de cortinillas y rotación anti-repetición con enfriamiento (`test/commercials.test.js`, `test/refactor.test.js`).
+- **Progresión de episodios diarios:** Políticas de repetición intradía, estrenos diarios, sagas de varias temporadas y maratones de fin de semana (`test/daily.test.js`, `test/programmer.test.js`).
+- **Automatización de radio estilo FM:** Rotación de artistas sin repeticiones consecutivas (`shuffleAvoidingArtist`), jingles de identificación y limpieza de guiones de locución (`test/radio.test.js`).
+- **Gráficas dinámicas en pantalla:** Generación de carteleras SVG y PDF de programación diaria, y tarjetas de "A continuación" (`test/billboard.test.js`, `test/lowerthirds.test.js`).
+- **Consistencia en Guía XMLTV EPG e IPTV:** Escape de caracteres XML y sincronización estricta entre la grilla EPG y la emisión real (`test/core.test.js`, `test/guide.test.js`).
+- **Selección de pistas de audio:** Elección automática de doblaje español latino sobre castellano en contenedores multilingües MKV (`test/refactor.test.js`).
+- **Privacidad y seguridad:** Bloqueo exhaustivo a motores de búsqueda (`X-Robots-Tag`) y autenticación/límite de intentos en Master Control (`test/antiIndex.test.js`, `test/core.test.js`).
 
 Ejecuta las pruebas en cualquier momento:
 ```bash

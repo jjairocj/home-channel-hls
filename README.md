@@ -19,7 +19,7 @@
 - 🕒 **Strict Clock-Aligned Slots:** Automatically synchronizes shows to exact half-hour and hour marks (`:00` and `:30`). Never drifts across the broadcast day.
 - 📼 **Intelligent Interstitial Composer:** Dynamically fills commercial breaks between episodes with intro bumpers (*"You're watching..."*), non-repeating ad spots, station idents, and closing previews (*"Coming up next..."*).
 - 🎙️ **Dynamic Next-Up Graphics & Voiceovers:** Renders on-the-fly vector SVG billboards and announces upcoming shows using neural TTS (ElevenLabs API or local edge-tts).
-- 📻 **Integrated 24/7 FM Radio Station:** Dedicated audio HLS stream with automated neural DJ voice tracks, anti-repetition artist rotation, periodic station jingles, and a retro 90s Hi-Fi tuner web interface with live RDS track metadata.
+- 📻 **Integrated 24/7 FM-Style Radio Station:** Dedicated audio HLS stream with automated DJ tracks (written by local LLM via Ollama, voiced with neural edge-tts), anti-repetition artist rotation, periodic station jingles, and a retro 90s Hi-Fi tuner web interface with live RDS track metadata.
 - 📅 **Rule-Based Weekly Grid & EPG:** Intuitive drag-and-drop schedule planner, automated daily episode progression, weekend marathons, and XMLTV EPG export (`/epg.xml`).
 - ⚡ **Multi-Platform Hardware Acceleration:** Supports NVIDIA NVENC, Intel QuickSync/VAAPI, Apple Silicon VideoToolbox, and high-efficiency CPU fallback (`libx264`).
 - 🎛️ **Web Master Control Studio:** Desktop-grade admin control room to monitor stream health, override items on air, manage transcode queues, and inspect viewer analytics.
@@ -57,7 +57,7 @@ That's it! Your station is now live:
 - 📺 **Public TV Player:** [http://localhost:3000](http://localhost:3000)
 - 🎛️ **Master Control Studio:** [http://localhost:3000/admin](http://localhost:3000/admin)
 - 📡 **Live TV HLS Stream:** `http://localhost:3000/live/channel.m3u8`
-- 📻 **24/7 FM Radio Stream:** `http://localhost:3000/live/radio/main/radio.m3u8`
+- 📻 **24/7 FM-Style Radio Stream:** `http://localhost:3000/live/radio/main/radio.m3u8`
 - 📑 **XMLTV EPG Guide:** `http://localhost:3000/epg.xml`
 - 📋 **IPTV M3U Playlist:** `http://localhost:3000/channel.m3u`
 
@@ -96,13 +96,13 @@ That's it! Your station is now live:
 
 ---
 
-## 📻 Integrated 24/7 FM Radio Engine
+## 📻 Integrated 24/7 FM-Style Radio Engine
 
-In addition to linear television broadcast, Home Channel HLS includes a self-contained, automated 24/7 FM radio station:
+In addition to linear television broadcast, Home Channel HLS includes a self-contained, automated 24/7 FM-style radio station:
 
 - **Standalone Audio HLS Stream:** Broadcasts clean audio streaming (`/live/radio/main/radio.m3u8`) playable in any browser, mobile player, or IPTV client.
 - **Retro 90s Hi-Fi Tuner Interface:** Switch between TV and Radio modes in the web player. Includes an authentic analog frequency dial, backlit signal indicators, volume knob, and real-time RDS digital marquee.
-- **Automated Neural DJ & Voice Tracks:** Features an automated radio DJ that writes track intros and announces song titles/artists using neural voice synthesis (`edge-tts` or ElevenLabs), with clean script sanitization.
+- **Automated DJ:** Track intros are written by a local LLM via Ollama (with template fallback when Ollama isn’t configured), voiced with neural edge-tts, and sanitized before synthesis.
 - **Smart Rotation & Cooldowns:** Anti-repetition algorithm ensures artists are never played back-to-back (`shuffleAvoidingArtist`) and schedules station identification jingles every 4 tracks.
 - **Directory Structure:**
   - `media/radio/music/` — Place your music tracks (`.mp3`, `.flac`, `.m4a`, `.wav`).
@@ -150,12 +150,15 @@ Home Channel HLS supports multiple languages via simple JSON dictionaries locate
 
 ## 🧪 Comprehensive Test Suite & Quality Assurance
 
-Reliable 24/7 broadcast requires zero drift, stable segment rotation, and strict clock synchronization. The codebase includes a comprehensive suite of **110+ automated tests** covering:
-- Clock arithmetic and slot boundary enforcement (`:00` and `:30`).
-- Seamless HLS buffer maintenance, transcode queue priority, and hardware fallback.
-- Commercial break composition and anti-repetition cooldown math.
-- XMLTV EPG character escaping and time format precision.
-- Audio loudness normalization (EBU R128) and multilingual audio track selection.
+Reliable 24/7 broadcast requires zero drift, stable scheduling, and strict clock synchronization. The codebase includes a comprehensive suite of **110+ automated tests** verifying:
+- **Clock arithmetic & slot compliance:** Strict `:00` and `:30` boundaries, broadcast day offsets (06:00 rollover), and slot duration math (`test/core.test.js`).
+- **Commercial break composition:** Exact 30/60 min block budgeting, bumper selection, and anti-repetition cooldown rotation (`test/commercials.test.js`, `test/refactor.test.js`).
+- **Daily episode progression:** Intraday repeat policies, daily premieres, multi-season sagas, and weekend marathons (`test/daily.test.js`, `test/programmer.test.js`).
+- **FM-style radio automation:** Artist rotation without consecutive repeats (`shuffleAvoidingArtist`), periodic jingles, and DJ script cleaning (`test/radio.test.js`).
+- **Dynamic on-screen graphics:** SVG daily billboards, PDF schedule generation, and "Next Up" lower-third cards (`test/billboard.test.js`, `test/lowerthirds.test.js`).
+- **XMLTV EPG & IPTV consistency:** Character escaping and EPG timing alignment with actual playout (`test/core.test.js`, `test/guide.test.js`).
+- **Audio track selection:** Automatic selection of Latin American Spanish over Castilian Spanish in multilingual MKV files (`test/refactor.test.js`).
+- **Privacy & security:** Full search engine blocking (`X-Robots-Tag`) and session authentication/rate-limiting (`test/antiIndex.test.js`, `test/core.test.js`).
 
 Run the test suite at any time:
 ```bash
