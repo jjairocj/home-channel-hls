@@ -1,5 +1,5 @@
 /**
- * Home Channel HLS - Public Routes: estado de emisión, guía, videoteca, IPTV (M3U/EPG) y HLS.
+ * CrHe X-99 - Rutas públicas: estado de emisión, guía, videoteca, IPTV (M3U/EPG) y HLS.
  */
 
 const fs = require('fs');
@@ -18,7 +18,28 @@ const IPTV_CORS = {
 const DAY_KEYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
 module.exports = function registerPublicRoutes(app, ctx) {
-  const { db, scheduler, playout, randomPlayout, power, auth, getBaseUrl, port } = ctx;
+  const { db, scheduler, playout, auth, power, getBaseUrl, port } = ctx;
+
+  // Segmentos HLS. Los nombres son únicos (numeración epoch), así que pueden cachearse
+  // en Cloudflare sin riesgo de servir un segmento viejo; la playlist nunca se cachea.
+  // Solo se sirven playlists y segmentos: las listas internas de FFmpeg (playlist.txt)
+  // viven en la misma carpeta y contienen rutas del servidor.
+  app.use('/live', (req, res, next) => {
+    res.set(IPTV_CORS);
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    if (!/\.(m3u8|ts)$/.test(req.path)) return res.sendStatus(404);
+
+    if (req.path.endsWith('.m3u8')) {
+      // Cada reproductor pide la lista cada ~4 s: así se cuenta la audiencia
+      if (ctx.audience) ctx.audience.hit(req);
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+      res.set('Content-Type', 'application/vnd.apple.mpegurl; charset=utf-8');
+    } else if (req.path.endsWith('.ts')) {
+      res.set('Cache-Control', 'public, max-age=86400, immutable');
+      res.set('Content-Type', 'video/mp2t');
+    }
+    next();
+  }, express.static(path.join(__dirname, '..', 'stream'), { etag: false, lastModified: false, cacheControl: false }));
 
   const waitForPlaylist = async (m3u8Path, maxWaitMs = 5000) => {
     const start = Date.now();
@@ -62,24 +83,21 @@ module.exports = function registerPublicRoutes(app, ctx) {
     };
   };
 
-  // Segmentos HLS Canal 100 (Principal 24/7 continuo)
-  app.use('/live', (req, res, next) => {
-    res.set(IPTV_CORS);
-    if (req.method === 'OPTIONS') return res.sendStatus(204);
-    if (!/\.(m3u8|ts)$/.test(req.path)) return res.sendStatus(404);
+  // HLS Canal 101: Los Simpsons 24/7 (Bajo demanda / On-demand)
+  const simpsonsDir = path.join(__dirname, '..', 'stream_simpsons');
+  app.use('/simpsons/live',
+    createChannelHlsMiddleware(() => ctx.simpsonsPlayout, simpsonsDir),
+    express.static(simpsonsDir, { etag: false, lastModified: false, cacheControl: false })
+  );
 
-    if (req.path.endsWith('.m3u8')) {
-      if (ctx.audience) ctx.audience.hit(req);
-      res.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
-      res.set('Content-Type', 'application/vnd.apple.mpegurl; charset=utf-8');
-    } else if (req.path.endsWith('.ts')) {
-      res.set('Cache-Control', 'public, max-age=86400, immutable');
-      res.set('Content-Type', 'video/mp2t');
-    }
-    next();
-  }, express.static(path.join(__dirname, '..', 'stream'), { etag: false, lastModified: false, cacheControl: false }));
+  // HLS Canal 102: Futurama 24/7 (Bajo demanda / On-demand)
+  const futuramaDir = path.join(__dirname, '..', 'stream_futurama');
+  app.use('/futurama/live',
+    createChannelHlsMiddleware(() => ctx.futuramaPlayout, futuramaDir),
+    express.static(futuramaDir, { etag: false, lastModified: false, cacheControl: false })
+  );
 
-  // HLS Canal 101: Shuffle 24/7 (Bajo demanda / On-demand Eco-Power)
+  // HLS Canal 103: Random 24/7 (Bajo demanda / On-demand)
   const randomDir = path.join(__dirname, '..', 'stream_random');
   app.use('/random/live',
     createChannelHlsMiddleware(() => ctx.randomPlayout, randomDir),
@@ -91,32 +109,47 @@ module.exports = function registerPublicRoutes(app, ctx) {
     res.set(IPTV_CORS).sendStatus(204);
   });
 
-  app.get(['/channel.m3u', '/channel.m3u8', '/playlist.m3u', '/playlist.m3u8'], (req, res) => {
+  app.all(['/channel.m3u', '/channel.m3u8', '/playlist.m3u', '/playlist.m3u8'], (req, res) => {
+    res.set(IPTV_CORS);
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+
     const baseUrl = getBaseUrl(req);
     const id = Scheduler.EPG_CHANNEL_ID;
-    const chName = process.env.CHANNEL_NAME || 'Home Channel';
-    let m3uContent = `#EXTM3U x-tvg-url="${baseUrl}/epg.xml" url-tvg="${baseUrl}/epg.xml"
-#EXTINF:-1 tvg-id="${id}" tvg-name="${chName}" tvg-logo="${baseUrl}/img/logo.png" group-title="General" tvg-chno="100",${chName}
-${baseUrl}/live/channel.m3u8
-`;
+    const isHls = req.path.endsWith('.m3u8');
+    console.log(`[IPTV] 📺 Solicitud de lista M3U (${req.method} ${req.path}) desde ${req.ip} (Host: ${req.headers.host || 'desconocido'}, UA: ${req.headers['user-agent'] || 'none'}) -> Base: ${baseUrl}`);
 
-    if (randomPlayout) {
-      m3uContent += `
-#EXTINF:-1 tvg-id="random_tv" tvg-name="${randomPlayout.channelName || '24/7 Shuffle'}" tvg-logo="${baseUrl}/img/logo.png" group-title="Variedades" tvg-chno="${randomPlayout.channelNumber || 101}",${randomPlayout.channelName || '24/7 Shuffle'}
-${baseUrl}/random/live/channel.m3u8
-`;
-    }
+    // Líneas con CRLF (\r\n) y estructura estricta para reproductores Smart TV (TiviMate, SS-IPTV, Smart IPTV, Kodi, etc.)
+    const lines = [
+      `#EXTM3U url-tvg="${baseUrl}/epg.xml" x-tvg-url="${baseUrl}/epg.xml"`,
+      `#EXTINF:-1 tvg-id="${id}" tvg-name="CrHe TV" tvg-logo="${baseUrl}/img/logo.png" group-title="Retro 90s" tvg-chno="100",CrHe TV`,
+      `${baseUrl}/live/channel.m3u8`,
+      `#EXTINF:-1 tvg-id="simpsons_tv" tvg-name="Los Simpsons 24/7" tvg-logo="${baseUrl}/img/logo.png" group-title="Animación" tvg-chno="101",Los Simpsons 24/7`,
+      `${baseUrl}/simpsons/live/channel.m3u8`,
+      `#EXTINF:-1 tvg-id="futurama_tv" tvg-name="Futurama 24/7" tvg-logo="${baseUrl}/img/logo.png" group-title="Animación" tvg-chno="102",Futurama 24/7`,
+      `${baseUrl}/futurama/live/channel.m3u8`,
+      `#EXTINF:-1 tvg-id="random_tv" tvg-name="Random 24/7" tvg-logo="${baseUrl}/img/logo.png" group-title="Variedades" tvg-chno="103",Random 24/7`,
+      `${baseUrl}/random/live/channel.m3u8`
+    ];
+    const m3uContent = lines.join('\r\n') + '\r\n';
 
-    res.set(IPTV_CORS);
     res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.set('Content-Type', 'application/vnd.apple.mpegurl; charset=utf-8');
+    // Para reproductores IPTV de Smart TV, application/x-mpegurl o audio/x-mpegurl es el MIME universal para listas completas .m3u
+    res.set('Content-Type', isHls ? 'application/vnd.apple.mpegurl; charset=utf-8' : 'application/x-mpegurl; charset=utf-8');
+    res.set('Content-Disposition', `inline; filename="${isHls ? 'channel.m3u8' : 'channel.m3u'}"`);
+    if (req.method === 'HEAD') return res.status(200).end();
     res.send(m3uContent);
   });
 
   // EPG de 3 días: las primeras 24 h son lo que realmente está al aire; el resto se
   // proyecta con el mismo planificador. Se cachea 60 s.
   let epgCache = { key: '', xml: '', at: 0 };
-  app.get('/epg.xml', (req, res) => {
+  app.all('/epg.xml', (req, res) => {
+    res.set(IPTV_CORS);
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    if (req.method === 'HEAD') {
+      res.set('Content-Type', 'application/xml; charset=utf-8');
+      return res.status(200).end();
+    }
     const baseUrl = getBaseUrl(req);
     const onAir = playout.getOnAirBlocks();
     const lastEnd = onAir.length ? new Date(onAir[onAir.length - 1].endTime).getTime() : Date.now();
@@ -124,11 +157,21 @@ ${baseUrl}/random/live/channel.m3u8
     const blocks = [...onAir, ...projected];
     const key = `${baseUrl}|${blocks.length ? blocks[0].startTime : ''}|${blocks.length}`;
     if (epgCache.key !== key || Date.now() - epgCache.at > 60000) {
-      const extraChannels = randomPlayout ? `  <channel id="random_tv">
-    <display-name>${randomPlayout.channelName || '24/7 Shuffle'}</display-name>
+      const extraChannels = `  <channel id="simpsons_tv">
+    <display-name>Los Simpsons 24/7</display-name>
     <icon src="${baseUrl}/img/logo.png" />
-  </channel>` : '';
-      const extraProgrammes = randomPlayout ? randomPlayout.getXmltvProgrammes(baseUrl, new Date(), 36) : '';
+  </channel>
+  <channel id="futurama_tv">
+    <display-name>Futurama 24/7</display-name>
+    <icon src="${baseUrl}/img/logo.png" />
+  </channel>
+  <channel id="random_tv">
+    <display-name>Random 24/7</display-name>
+    <icon src="${baseUrl}/img/logo.png" />
+  </channel>`;
+      const extraProgrammes = (ctx.simpsonsPlayout ? ctx.simpsonsPlayout.getXmltvProgrammes(baseUrl, new Date(), 36) : '') +
+        (ctx.futuramaPlayout ? ctx.futuramaPlayout.getXmltvProgrammes(baseUrl, new Date(), 36) : '') +
+        (ctx.randomPlayout ? ctx.randomPlayout.getXmltvProgrammes(baseUrl, new Date(), 36) : '');
       epgCache = { key, xml: scheduler.generateXmltv(baseUrl, blocks, { extraChannels, extraProgrammes }), at: Date.now() };
     }
     res.set(IPTV_CORS);
@@ -176,13 +219,20 @@ ${baseUrl}/random/live/channel.m3u8
     const isAdmin = auth.hasSession(req);
     const body = {
       ...playout.getStatus(),
+      simpsons: ctx.simpsonsPlayout ? ctx.simpsonsPlayout.getStatus() : null,
+      futurama: ctx.futuramaPlayout ? ctx.futuramaPlayout.getStatus() : null,
+      random: ctx.randomPlayout ? ctx.randomPlayout.getStatus() : null,
       urls: {
         hls: `${baseUrl}/live/channel.m3u8`,
+        simpsonsHls: `${baseUrl}/simpsons/live/channel.m3u8`,
+        futuramaHls: `${baseUrl}/futurama/live/channel.m3u8`,
+        randomHls: `${baseUrl}/random/live/channel.m3u8`,
         ...(isAdmin ? { m3u: `${baseUrl}/channel.m3u`, epg: `${baseUrl}/epg.xml` } : {})
       }
     };
 
     if (isAdmin) {
+      body.power = await power.get();
       body.system = { platform: process.platform, nodeVersion: process.version, port };
     }
 
@@ -190,10 +240,8 @@ ${baseUrl}/random/live/channel.m3u8
     res.json(body);
   });
 
-
   app.get('/api/system/power', async (req, res) => {
     if (!auth.isAuthorized(req)) return res.status(401).json({ error: 'No autorizado' });
-    if (!power) return res.json({ success: false, error: 'Módulo de energía no disponible' });
     res.json(await power.get());
   });
 
@@ -258,7 +306,7 @@ ${baseUrl}/random/live/channel.m3u8
           const start = new Date(b.startTime);
           const end = new Date(b.endTime);
           const isSpecial = (b.durationSeconds || 1800) > 1800;
-          let cleanTitle = b.isOffAir ? (process.env.CHANNEL_NAME || 'Home Channel') + ' // Sign-Off' : b.title.replace(/\s*\(Doble Episodio\)/i, '').trim();
+          let cleanTitle = b.isOffAir ? 'CrHe X-99 // Cierre de Emisión' : b.title.replace(/\s*\(Doble Episodio\)/i, '').trim();
           if (isSpecial && !cleanTitle.includes('Especial') && !b.isOffAir) {
             cleanTitle += ' (Especial 1 Hora)';
           }
@@ -281,9 +329,9 @@ ${baseUrl}/random/live/channel.m3u8
     const publicBlocks = playout.getOnAirBlocks().map(b => {
       const isOffAir = b.isOffAir || (b.title && b.title.toLowerCase().includes('cierre'));
       const isSpecial = (b.durationSeconds || 1800) > 1800;
-      let cleanTitle = (process.env.CHANNEL_NAME || 'Home Channel') + ' // Special Broadcast';
+      let cleanTitle = 'CrHe X-99 // Transmisión Especial';
       if (isOffAir) {
-        cleanTitle = (process.env.CHANNEL_NAME || 'Home Channel') + ' // Sign-Off';
+        cleanTitle = 'CrHe X-99 // Cierre de Emisión';
       } else if (b.title) {
         cleanTitle = b.title.replace(/\s*\(Doble Episodio\)/i, '').trim();
       } else if (b.mainShow) {
