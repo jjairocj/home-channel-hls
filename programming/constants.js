@@ -1,5 +1,5 @@
 /**
- * Home Channel HLS - Constantes de programación: franjas horarias, cierre nocturno y umbrales.
+ * CrHe X-99 - Constantes de programación: franjas horarias, cierre nocturno y umbrales.
  */
 
 const { DAY_KEYS } = require('../core/time');
@@ -24,7 +24,13 @@ const LONG_SERIES_DAILY_AIRINGS = 3;
  * Series episódicas (sin continuidad entre capítulos): cada emisión es un capítulo al
  * azar en vez del capítulo del día. Se detectan por nombre; el panel puede cambiarlo.
  */
-const EPISODIC_KEYWORDS = ['simpson', 'smiling friends'];
+const EPISODIC_KEYWORDS = [
+  'simpson', 'smiling friends', 'futurama', 'rick y morty', 'cuentos de los hermanos grimm',
+  'coraje', 'chicas superpoderosas', 'casa de los dibujos',
+  'critico', 'the critic', 'escuadron del tiempo', 'time squad',
+  'motoratones', 'biker mice', 'ren y stimpy', 'ren & stimpy',
+  'padre de familia', 'family guy'
+];
 
 /**
  * Frecuencia automática: las series cortas (hasta este total de capítulos, la típica de

@@ -1,5 +1,5 @@
 /**
- * Home Channel HLS - 24/7 Linear Playout & Master Control Server
+ * CrHe X-99 - Playout Server & Master Control
  * Arranque del servidor: emisión HLS, guía IPTV/EPG, panel de administración y
  * transcodificador. Las rutas viven en routes/ y la lógica compartida en lib/.
  */
@@ -15,6 +15,7 @@ const Scheduler = require('./scheduler');
 const { COMMERCIAL_STATS_KEY } = require('./scheduling/Scheduler');
 const Transcoder = require('./transcoder');
 const PlayoutEngine = require('./playout');
+const PowerTelemetry = require('./lib/power');
 const { AdminAuth } = require('./lib/auth');
 const { ProgrammingManager, ScheduleService } = require('./programming');
 
@@ -47,25 +48,22 @@ app.use(express.json({ limit: '2mb' }));
 /* ---------- Directorios ---------- */
 const mediaRoot = path.resolve(__dirname, 'media');
 const uploadsTempDir = path.join(mediaRoot, 'uploads_temp');
-const ingestDir = path.resolve(mediaRoot, 'ingest');
-for (const dir of [uploadsTempDir, ingestDir]) {
+const mkvDownloadsDir = path.resolve(__dirname, 'descargas_mkv');
+for (const dir of [uploadsTempDir, mkvDownloadsDir]) {
   try { fs.mkdirSync(dir, { recursive: true }); } catch (e) {}
 }
 
 /* ---------- Módulos del sistema ---------- */
-const PowerTelemetry = require('./lib/power');
-const RandomEngine = require('./random/RandomEngine');
-
 const db = new Database();
 const scheduler = new Scheduler(db);
 const transcoder = new Transcoder(db, scheduler);
 const playout = new PlayoutEngine(scheduler);
-const power = new PowerTelemetry();
-const randomPlayout = new RandomEngine(db, {
-  streamDir: path.join(__dirname, 'stream_random'),
-  channelNumber: 101,
-  channelName: process.env.RANDOM_CHANNEL_NAME || '24/7 Shuffle Channel'
-});
+const SimpsonsEngine = require('./simpsons/SimpsonsEngine');
+const simpsonsPlayout = new SimpsonsEngine(db);
+const FuturamaEngine = require('./futurama/FuturamaEngine');
+const futuramaPlayout = new FuturamaEngine(db);
+const RandomEngine = require('./random/RandomEngine');
+const randomPlayout = new RandomEngine(db);
 
 // Cortinillas "A continuación" y carteleras nuevas: la cola de 24 h se arma con los clips
 // que ya existían, así que al terminar una tanda se reprograma en el próximo :00/:30
@@ -128,21 +126,14 @@ playout.on('commercialAired', (item) => {
     console.warn('[Playout] No se pudo registrar la emisión del comercial:', e.message);
   }
 });
+const power = new PowerTelemetry();
 const auth = new AdminAuth(db);
 // Programador por reglas: la grilla sale de reglas manuales y sugeridas (ver programming/)
 const schedule = new ScheduleService({ db, scheduler, playout });
 const programming = new ProgrammingManager({ db, schedule });
 auth.ready().catch((e) => console.error('[Auth] Error inicializando autenticación:', e.message));
 
-const VALID_HOST_RE = /^[a-zA-Z0-9.-]+(:\d{1,5})?$/;
-const getBaseUrl = (req) => {
-  if (process.env.PUBLIC_BASE_URL) return process.env.PUBLIC_BASE_URL.replace(/\/$/, '');
-  const rawHost = String((req && req.headers && req.headers.host) || '').trim();
-  const host = VALID_HOST_RE.test(rawHost) ? rawHost : process.env.PUBLIC_BASE_URL ? new URL(process.env.PUBLIC_BASE_URL).host : 'localhost:3000';
-  const rawProto = String((req && req.headers && req.headers['x-forwarded-proto']) || (req && req.secure ? 'https' : (req && req.protocol)) || 'http').split(',')[0].trim().toLowerCase();
-  const proto = rawProto === 'https' ? 'https' : 'http';
-  return `${proto}://${host}`;
-};
+const { getBaseUrl } = require('./core/url');
 
 // Radio FM: emisoras con stream de audio en vivo y locutor (ver radio/)
 const RadioService = require('./radio');
@@ -155,7 +146,7 @@ const audience = AudienceTracker.fromDb(db, {
   getProgram: () => programName(playout.currentTrack && playout.currentTrack.blockTitle)
 });
 
-const ctx = { db, scheduler, transcoder, playout, randomPlayout, power, auth, programming, schedule, radio, audience, getBaseUrl, port: PORT, mediaRoot, uploadsTempDir, ingestDir };
+const ctx = { db, scheduler, transcoder, playout, simpsonsPlayout, futuramaPlayout, randomPlayout, auth, power, programming, schedule, radio, audience, getBaseUrl, port: PORT, mediaRoot, uploadsTempDir, mkvDownloadsDir };
 
 /* ---------- Autenticación ---------- */
 auth.registerRoutes(app);
@@ -208,7 +199,7 @@ process.on('unhandledRejection', (reason) => {
 /* ---------- Arranque ---------- */
 const server = app.listen(PORT, '0.0.0.0', async () => {
   console.log('================================================================');
-  console.log('📺 Home Channel HLS - PLAYOUT ENGINE & MASTER CONTROL');
+  console.log('📺 CrHe X-99 - PLAYOUT ENGINE & MASTER CONTROL');
   console.log('================================================================');
   console.log(`🚀 Televisor retro 90s:   http://localhost:${PORT}`);
   console.log(`🎛️  Master Control (admin): http://localhost:${PORT}/admin`);
@@ -244,13 +235,15 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
   // Radio: escanea la música y pone al aire las emisoras que tengan temas
   radio.start().catch(e => console.warn('[Radio] Error al iniciar:', e.message));
 
-  // Canal secundario bajo demanda (On-Demand / Eco-Power):
-  // Permanece en reposo (0% GPU/CPU) hasta que un usuario lo sintonice, y se apaga tras 3 min de inactividad.
+  // Canales secundarios bajo demanda (On-Demand / Eco-Power):
+  // Permanecen en reposo (0% GPU/CPU) hasta que un usuario los sintonice, y se apagan tras 3 min de inactividad.
   try {
+    simpsonsPlayout.startInactivityWatchdog();
+    futuramaPlayout.startInactivityWatchdog();
     randomPlayout.startInactivityWatchdog();
-    console.log('[Canal 101] 💤 Modo bajo demanda (On-Demand) activo: en reposo hasta recibir sintonía.');
+    console.log('[Canales 101/102/103] 💤 Modo bajo demanda (On-Demand) activo: en reposo hasta recibir sintonía.');
   } catch (e) {
-    console.warn('[Canal 101] Error al inicializar watchdog de inactividad:', e.message);
+    console.warn('[Canales Secundarios] Error al inicializar watchdogs de inactividad:', e.message);
   }
 
   // Auditoría de duraciones: si alguna estaba mal registrada, la emisión se recalcula
@@ -292,6 +285,8 @@ async function shutdown(signal) {
 
   audience.stop();
   playout.stop();
+  simpsonsPlayout.stop();
+  futuramaPlayout.stop();
   randomPlayout.stop();
   radio.stop();
   db.flushLocalJsonSync();

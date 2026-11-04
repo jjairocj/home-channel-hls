@@ -1,11 +1,11 @@
 /**
- * Home Channel HLS - Canal 101: Shuffle / Random 24/7 (Zapping Continuo).
+ * CrHe X-99 - Canal 103: Random 24/7 (Zapping / Shuffle Continuo).
  *
- * Motor de emisión continua aleatoria de la mediateca:
+ * Motor de emisión continua aleatoria de toda la videoteca:
+ * - Reúne todos los episodios disponibles de todas las series de la mediateca (~4600 episodios).
  * - Emisión continua 24/7 sin horarios fijos ni repeticiones en el mismo ciclo.
- * - Modo bajo demanda (On-Demand / Eco-Power): duerme cuando no hay televidentes.
- * - Intercala cortinillas / station IDs entre episodios.
- * - Salida HLS en /stream_random/channel.m3u8 para IPTV (CH-101) y reproductor web.
+ * - Solo intercala el Station ID oficial (bumper mosaico 3x3) entre episodios.
+ * - Salida HLS en /app/stream_random/channel.m3u8 para IPTV (CH-103) y reproductor web.
  */
 
 const fs = require('fs');
@@ -18,6 +18,7 @@ const { startSegmentJanitor } = require('../playout/SegmentJanitor');
 
 const CHANNEL_ROOT = path.resolve(__dirname, '..');
 const STREAM_DIR = path.join(CHANNEL_ROOT, 'stream_random');
+const PLAYLIST_FILE = path.join(STREAM_DIR, 'playlist.txt');
 const SETTING_CYCLE_KEY = 'random_247_cycle';
 
 function hash(text) {
@@ -60,6 +61,8 @@ class RandomEngine extends EventEmitter {
 
     this.encoder = config.encoder || createEncoder();
     this.watermarkFile = config.watermarkFile || path.join(CHANNEL_ROOT, 'watermark.png');
+    this.channelNumber = config.channelNumber !== undefined ? config.channelNumber : 103;
+    this.channelName = config.channelName || 'Random 24/7';
     this.process = null;
     this.shouldBeRunning = false;
     this.startedAt = null;
@@ -73,8 +76,6 @@ class RandomEngine extends EventEmitter {
     this.lastHitAt = 0;
     this.idleTimeoutMs = 3 * 60 * 1000;
     this.inactivityTimer = null;
-    this.channelNumber = config.channelNumber || 101;
-    this.channelName = config.channelName || process.env.RANDOM_CHANNEL_NAME || '24/7 Shuffle Channel';
     this.allEpisodes = [];
 
     startSegmentJanitor(this.streamDir);
@@ -88,7 +89,11 @@ class RandomEngine extends EventEmitter {
     return this.queue.at(this.index);
   }
 
-  /** Extrae todos los episodios listos de series autorizadas para el canal aleatorio. */
+  /** Extrae todos los episodios listos de series autorizadas para Canal 103 (Random 24/7).
+   * - Excluye expresamente Los Simpsons y Futurama (poseen sus propios canales 24/7 en CH-101 y CH-102).
+   * - Incluye: Coraje el Perro Cobarde, Las Chicas Superpoderosas, Transformers (Beast Wars),
+   *   La Casa de los Dibujos, Rick y Morty y Smiling Friends.
+   */
   loadAllEpisodes() {
     const shows = (this.db ? this.db.getShows() : []) || [];
     const profiles = (this.db && this.db.getJsonSetting) ? this.db.getJsonSetting('programming_profiles', {}) : {};
@@ -102,46 +107,77 @@ class RandomEngine extends EventEmitter {
     if (customConfig && Array.isArray(customConfig.showIds) && customConfig.showIds.length > 0) {
       for (const id of customConfig.showIds) episodicShowIds.add(String(id));
     } else {
-      // Por defecto: todas las series episódicas o todas si no hay filtro
-      for (const show of shows) {
-        const saga = sagas.find(s => s.shows.some(sh => String(sh.id) === String(show.id)));
-        if (!saga || isEpisodic(saga) || shows.length <= 5) {
-          episodicShowIds.add(String(show.id));
+      // Palabras clave de series EXCLUIDAS de Canal 103 (ya tienen canales propios 24/7)
+      const EXCLUDED_KEYWORDS = ['simpson', 'futurama'];
+
+      // Palabras clave de series permitidas en Canal 103 por defecto
+      const INCLUDED_KEYWORDS = [
+        'coraje',
+        'chicas superpoderosas',
+        'transformers',
+        'beast wars',
+        'casa de los dibujos',
+        'rick y morty',
+        'smiling friends',
+        'critico',
+        'the critic',
+        'escuadron del tiempo',
+        'time squad',
+        'motoratones',
+        'biker mice',
+        'ren y stimpy',
+        'ren & stimpy',
+        'ren and stimpy',
+        'padre de familia',
+        'family guy'
+      ];
+
+      const isMatch = (str, keywords) => {
+        const norm = String(str || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+        return keywords.some(k => norm.includes(k));
+      };
+
+      // Identificar qué shows pertenecen EXCLUSIVAMENTE a las series autorizadas del Canal 103
+      for (const saga of sagas.values()) {
+        const sagaText = `${saga.label} ${saga.members.map(m => m.title).join(' ')}`;
+        if (isMatch(sagaText, EXCLUDED_KEYWORDS)) {
+          continue;
+        }
+        if (isMatch(sagaText, INCLUDED_KEYWORDS)) {
+          for (const m of saga.members || []) {
+            if (!isMatch(m.title, EXCLUDED_KEYWORDS)) {
+              episodicShowIds.add(m.id);
+            }
+          }
         }
       }
-      if (episodicShowIds.size === 0) {
-        for (const show of shows) episodicShowIds.add(String(show.id));
+
+      // Coincidencia directa por título de show
+      for (const show of shows) {
+        if (isMatch(show.title, EXCLUDED_KEYWORDS)) continue;
+        if (isMatch(show.title, INCLUDED_KEYWORDS)) {
+          episodicShowIds.add(show.id);
+        }
       }
     }
 
-    const readyEpisodes = [];
+    const episodes = [];
     for (const show of shows) {
-      if (!episodicShowIds.has(String(show.id))) continue;
-      const episodes = show.episodes || [];
-      for (const ep of episodes) {
-        const videoPath = ep.path;
-        if (!videoPath || !fs.existsSync(videoPath)) continue;
-        readyEpisodes.push({
+      if (!episodicShowIds.has(show.id)) continue;
+      for (const ep of show.episodes || []) {
+        if (!ep.path || !fs.existsSync(ep.path)) continue;
+        episodes.push({
           id: ep.id,
-          showId: show.id,
+          title: ep.title || ep.name || 'Episodio',
           showTitle: show.title || 'Serie',
-          title: ep.title || `Capítulo ${ep.episode}`,
-          season: ep.season || 1,
-          episode: ep.episode || 1,
-          duration: Math.round(ep.duration || 1320),
-          path: videoPath
+          duration: ep.duration || 1400,
+          path: ep.path,
+          type: 'show'
         });
       }
     }
-
-    this.allEpisodes = readyEpisodes;
-    return readyEpisodes;
-  }
-
-  loadBumpers() {
-    const commercials = (this.db ? this.db.getCommercials() : []) || [];
-    const ready = commercials.filter(c => c.type === 'bumper' && c.status === 'ready' && c.path && fs.existsSync(c.path));
-    return ready.length ? ready : [{ id: 'default_bumper', title: 'Station ID', duration: 10, path: '' }];
+    this.allEpisodes = episodes;
+    return episodes;
   }
 
   /** Construye la cola de reproducción barajando todos los episodios sin repetir. */
@@ -332,16 +368,32 @@ class RandomEngine extends EventEmitter {
       for (const id of customConfig.showIds) currentAllowedIds.add(String(id));
     } else {
       const profiles = (this.db && this.db.getJsonSetting) ? this.db.getJsonSetting('programming_profiles', {}) : {};
-      const { detectSagas, isEpisodic } = require('../programming/sagas');
+      const { detectSagas } = require('../programming/sagas');
       const sagas = detectSagas(shows, profiles);
-      for (const show of shows) {
-        const saga = sagas.find(s => s.shows && s.shows.some(sh => String(sh.id) === String(show.id)));
-        if (!saga || isEpisodic(saga) || shows.length <= 5) {
-          currentAllowedIds.add(String(show.id));
+      const EXCLUDED_KEYWORDS = ['simpson', 'futurama'];
+      const INCLUDED_KEYWORDS = [
+        'coraje', 'chicas superpoderosas', 'transformers', 'beast wars',
+        'casa de los dibujos', 'rick y morty', 'smiling friends', 'critico',
+        'the critic', 'escuadron del tiempo', 'time squad', 'motoratones',
+        'biker mice', 'ren y stimpy', 'ren & stimpy', 'ren and stimpy',
+        'padre de familia', 'family guy'
+      ];
+      const isMatch = (str, keywords) => {
+        const norm = String(str || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+        return keywords.some(k => norm.includes(k));
+      };
+      for (const saga of sagas.values()) {
+        const sagaText = `${saga.label} ${saga.members.map(m => m.title).join(' ')}`;
+        if (isMatch(sagaText, EXCLUDED_KEYWORDS)) continue;
+        if (isMatch(sagaText, INCLUDED_KEYWORDS)) {
+          for (const m of saga.members || []) {
+            if (!isMatch(m.title, EXCLUDED_KEYWORDS)) currentAllowedIds.add(String(m.id));
+          }
         }
       }
-      if (currentAllowedIds.size === 0) {
-        for (const show of shows) currentAllowedIds.add(String(show.id));
+      for (const show of shows) {
+        if (isMatch(show.title, EXCLUDED_KEYWORDS)) continue;
+        if (isMatch(show.title, INCLUDED_KEYWORDS)) currentAllowedIds.add(String(show.id));
       }
     }
 
