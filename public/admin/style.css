@@ -2539,3 +2539,224 @@ input[type="checkbox"] { width: 15px; height: 15px; accent-color: #2c7ac0; }
   border-color: #00f0ff !important;
   box-shadow: 0 0 10px rgba(0, 240, 255, 0.7) !important;
 }
+
+
+/* ===================================================================
+   CANALES 24/7 (MULTICANAL)
+   =================================================================== */
+
+.channel-card {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid #d5dfe5;
+  border-radius: 6px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  gap: 10px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.channel-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(30, 100, 180, 0.14);
+}
+
+.channel-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.channel-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 12px;
+  color: #0b1f35;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.channel-meta {
+  flex: 1;
+  min-width: 0;
+}
+.channel-name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--heading);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.channel-desc {
+  display: block;
+  font-size: 11px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.channel-status-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+.channel-status-badge.active-green {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+.channel-status-badge.standby-blue {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+.channel-status-badge.stopped-gray {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}
+
+.channel-now-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.channel-now-box.muted {
+  font-size: 12px;
+  color: #64748b;
+  padding: 12px 10px;
+  text-align: center;
+}
+.channel-now-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+}
+.channel-now-show {
+  font-weight: 700;
+  color: #0369a1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.channel-now-times {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #64748b;
+  white-space: nowrap;
+}
+.channel-now-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.channel-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.channel-progress-fill {
+  height: 100%;
+  background: var(--cyan);
+  transition: width 0.3s ease;
+}
+
+.channel-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid #f1f5f9;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.channel-cycle-info {
+  font-size: 11px;
+  color: #64748b;
+}
+.channel-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Checklist de series de Canal 101 (Shuffle) */
+.random-show-check-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid var(--show-color, #00f0ff);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  user-select: none;
+}
+.random-show-check-card:hover {
+  background: #f0f7ff;
+  border-color: #cbd5e1;
+}
+.random-show-check-card.selected {
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+.random-show-check-card input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+.random-show-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.random-show-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.random-show-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: #64748b;
+}
+.random-show-cat {
+  background: #e2e8f0;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 500;
+}
+.random-show-eps {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}

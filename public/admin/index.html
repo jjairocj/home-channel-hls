@@ -549,7 +549,7 @@
               <div class="bumpers-summary-card">
                 <span class="summary-label">🎙️ Voz Activa</span>
                 <strong class="summary-value" id="bumpersStatActiveVoice">El Faraón (eleven_v4)</strong>
-                <small class="summary-desc">Locutor en español colombiano</small>
+                <small class="summary-desc">Locutor en español</small>
               </div>
               <div class="bumpers-summary-card">
                 <span class="summary-label">💾 Audios en Caché</span>
@@ -569,12 +569,67 @@
             </div>
 
             <p class="window-intro">
-              Locuciones sintetizadas con ElevenLabs y cortinillas MP4 dinámicas quemadas con GPU.
+              Locuciones sintetizadas con TTS y cortinillas MP4 dinámicas quemadas con GPU.
               Puedes previsualizar y reproducir cualquier audio o video directamente desde este panel.
             </p>
 
             <div class="bumpers-grid" id="bumpersGridContainer">
               <div class="loading-box">Cargando grabaciones y cortinillas...</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CANALES 24/7 (MULTICANAL) -->
+      <section class="admin-tab-content" id="tabChannels">
+        <div class="content-panel aero-window">
+          <div class="window-title"><span class="window-icon">📺</span> Gestión de Canales 24/7</div>
+          <div class="window-commandbar">
+            <button type="button" class="btn-studio btn-primary" id="btnRefreshChannels">↻ Refrescar canales</button>
+            <span class="count-label" id="channelsStatusSummary" style="margin-left: auto;">Canales configurados</span>
+          </div>
+          <div class="window-body">
+            <p class="window-intro">
+              Supervisa la emisión en vivo de cada canal, controla su estado independiente y configura qué series componen la mezcla del Canal 101 (Shuffle 24/7 con modo Eco-Power bajo demanda).
+            </p>
+
+            <!-- CUADRÍCULA DE TARJETAS DE CANALES -->
+            <div class="channels-monitor-grid" id="channelsGridContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 20px;">
+              <div class="loading-box">Cargando estado de canales...</div>
+            </div>
+
+            <!-- GESTOR DE CONTENIDO PARA CANAL ALEATORIO -->
+            <div class="aero-card" style="padding: 16px 18px; background: #ffffff; border: 1px solid #c9d8e5; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">
+                <div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 20px;">🎲</span>
+                    <strong style="font-size: 15px; color: #1e3a5f;">Programación del Canal 101: 24/7 Shuffle Channel</strong>
+                  </div>
+                  <span style="display: block; font-size: 12px; color: #64748b; margin-top: 2px;">
+                    Selecciona las series que rotan en el Canal 101. Al guardar, el motor genera una mezcla sin repeticiones de todos los capítulos seleccionados.
+                  </span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span class="count-label" id="randomSelectedCountBadge">0 series seleccionadas</span>
+                  <button type="button" class="btn-studio btn-primary" id="btnSaveRandomShows">💾 Guardar y Re-barajar Canal 101</button>
+                </div>
+              </div>
+
+              <!-- Barra de filtros rápidos -->
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <button type="button" class="btn-micro" id="btnSelectAllRandom">Seleccionar todas</button>
+                  <button type="button" class="btn-micro" id="btnDeselectAllRandom">Desmarcar todas</button>
+                  <button type="button" class="btn-micro" id="btnRecommendedRandom">✨ Selección recomendada</button>
+                </div>
+                <input type="search" id="randomShowsSearchInput" class="admin-input-compact" placeholder="🔍 Filtrar series..." style="min-width: 220px;">
+              </div>
+
+              <!-- Cuadrícula de checkboxes -->
+              <div id="randomShowsGridContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; max-height: 380px; overflow-y: auto; padding: 4px;">
+                <div class="loading-box">Cargando series de la mediateca...</div>
+              </div>
             </div>
           </div>
         </div>
@@ -614,7 +669,14 @@
         <span class="metric-desc" id="statQueueDesc">En espera</span>
         <span class="metric-subdetail" id="statQueueRate">⚡ Promedio: -- | -- cap/h</span>
       </div>
-      
+      <div class="metric-card gadget clickable" id="energyCard" title="Consumo eléctrico y almacenamiento del servidor">
+        <span class="metric-label">⚡ Consumo eléctrico</span>
+        <span class="metric-value orange" id="statPowerWatts">-- W</span>
+        <span class="metric-desc" id="statPowerKwh">Hoy: -- kWh | 24h: -- kWh</span>
+        <span class="metric-subdetail" id="statPowerSplit">CPU: -- W · GPU: -- W · Base: 25W</span>
+        <span class="metric-subdetail" id="statDiskSpace">💾 DISCO: -- libres (--%)</span>
+      </div>
+    </aside>
   </div>
 
   <!-- Barra de tareas: botón Inicio, pestañas y área de notificación -->
@@ -638,12 +700,14 @@
       <button class="tab-btn" data-tab="tabTranscode" title="Cola de transcodificación">
         <span class="tab-icon">⚙️</span><span class="tab-label" data-i18n="nav.transcoder">Transcodificación</span>
       </button>
-      
       <button class="tab-btn" data-tab="tabPlayout" title="Monitor en vivo">
         <span class="tab-icon">📡</span><span class="tab-label" data-i18n="nav.live">Monitor</span>
       </button>
       <button class="tab-btn" data-tab="tabBumpers" title="Locución y Cortinillas Dinámicas">
         <span class="tab-icon">🎙️</span><span class="tab-label" data-i18n="nav.bumpers">Locución</span>
+      </button>
+      <button class="tab-btn" data-tab="tabChannels" title="Gestión de Canales 24/7">
+        <span class="tab-icon">📺</span><span class="tab-label">Canales</span>
       </button>
     </div>
     <div class="taskbar-tray">
@@ -769,6 +833,95 @@
           <button type="submit" class="btn-studio btn-primary">Guardar serie</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL: GESTIONAR SERIE / PROGRAMA (DETALLES Y CAPÍTULOS) -->
+  <div class="modal-backdrop" id="manageShowModal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-dialog-header">
+        <h3 id="manageShowModalTitle">🎬 Administrar Programa</h3>
+        <button class="btn-close-modal" id="btnCloseManageShowModal" aria-label="Cerrar">&times;</button>
+      </div>
+
+      <div class="modal-dialog-body" style="display: flex; flex-direction: column; gap: 14px;">
+        <!-- INFORMACIÓN BÁSICA DEL PROGRAMA -->
+        <form id="manageShowForm" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;">
+          <input type="hidden" id="manageShowId">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong style="font-size: 13px; color: var(--heading);">📝 Información del programa</strong>
+            <button type="submit" class="btn-studio btn-primary btn-sm" id="btnSaveShowDetails">💾 Guardar cambios</button>
+          </div>
+          <div class="form-row-grid">
+            <div class="form-row" style="margin-bottom: 0;">
+              <label for="manageShowTitle">Nombre</label>
+              <input type="text" id="manageShowTitle" class="admin-input" required>
+            </div>
+            <div class="form-row" style="margin-bottom: 0;">
+              <label for="manageShowCategory">Categoría</label>
+              <select id="manageShowCategory" class="admin-input">
+                <option value="Animación">Animación</option>
+                <option value="Comedia">Comedia</option>
+                <option value="Acción">Acción</option>
+                <option value="Ciencia Ficción">Ciencia Ficción</option>
+                <option value="Documental">Documental</option>
+                <option value="General">General</option>
+              </select>
+            </div>
+            <div class="form-row" style="margin-bottom: 0;">
+              <label for="manageShowColor">Color distintivo</label>
+              <select id="manageShowColor" class="admin-input">
+                <option value="#00f0ff">Cian (#00f0ff)</option>
+                <option value="#ff007f">Magenta (#ff007f)</option>
+                <option value="#ffe600">Amarillo (#ffe600)</option>
+                <option value="#39ff14">Verde (#39ff14)</option>
+                <option value="#ff8800">Naranja (#ff8800)</option>
+                <option value="#ec4899">Rosa (#ec4899)</option>
+                <option value="#3b82f6">Azul (#3b82f6)</option>
+                <option value="#ef4444">Rojo (#ef4444)</option>
+                <option value="#10b981">Esmeralda (#10b981)</option>
+                <option value="#8b5cf6">Púrpura (#8b5cf6)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row" style="margin-bottom: 0;">
+            <label for="manageShowDesc">Descripción</label>
+            <textarea id="manageShowDesc" rows="2" class="admin-input" placeholder="Descripción de la serie para EPG..."></textarea>
+          </div>
+        </form>
+
+        <!-- CONTROL DE EMISIÓN Y PROGRESO -->
+        <div id="manageShowProgressionSection" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 14px;">
+          <!-- Se inyecta dinámicamente selector de próximo capítulo o barra de ciclo aleatorio -->
+        </div>
+
+        <!-- LISTADO DE CAPÍTULOS DISPONIBLES -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <strong style="font-size: 13px; color: var(--heading);">🎞️ Capítulos disponibles</strong>
+              <span class="count-label" id="manageShowEpCountBadge">0 capítulos</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <select id="manageShowSeasonFilter" class="admin-input-compact" style="min-width: 150px;">
+                <option value="all">Todas las temporadas</option>
+              </select>
+              <input type="search" id="manageShowEpSearch" class="admin-input-compact" placeholder="🔍 Filtrar capítulos..." style="min-width: 180px;">
+            </div>
+          </div>
+          <div id="manageShowEpListContainer" class="show-episodes-list" style="max-height: 280px; min-height: 100px; overflow-y: auto;">
+            <!-- Lista filtrada de capítulos -->
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-dialog-footer" style="justify-content: space-between;">
+        <button type="button" class="btn-micro-danger" id="btnManageDeleteShow" style="font-size: 12px; padding: 6px 14px;">🗑️ Borrar Programa</button>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn-studio btn-primary" id="btnManageUploadEp">＋ Subir Capítulo</button>
+          <button type="button" class="btn-studio btn-ghost" id="btnCancelManageShow">Cerrar</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -979,6 +1132,94 @@
         </div>
         <div class="modal-dialog-footer">
           <button type="button" class="btn-studio btn-ghost" id="btnCancelGroups">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONSUMO ELÉCTRICO Y DISCOS -->
+  <div class="modal-backdrop" id="energyModal">
+    <div class="modal-dialog modal-md">
+      <div class="modal-dialog-header">
+        <div class="modal-title-box">
+          <span class="modal-icon">⚡</span>
+          <div>
+            <h3>Energía y almacenamiento</h3>
+            <span class="modal-subtitle">CPU, GPU, consumo acumulado en kWh y espacio en disco</span>
+          </div>
+        </div>
+        <button class="btn-close-modal" id="btnCloseEnergyModal" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-dialog-body">
+        <div class="power-panel">
+          <div class="power-total">
+            <span>Potencia total instantánea</span>
+            <strong id="modalTotalWatts">-- W</strong>
+          </div>
+          <div class="power-parts">
+            <div class="power-part"><span>CPU (RAPL)</span><strong id="modalCpuWatts">-- W</strong></div>
+            <div class="power-part"><span>GPU (Encoder)</span><strong id="modalGpuWatts">-- W</strong></div>
+            <div class="power-part"><span>Base (Motherboard/RAM)</span><strong id="modalBaseWatts">25 W</strong></div>
+          </div>
+        </div>
+
+        <h4 class="section-title">📊 Consumo acumulado (kWh)</h4>
+        <div class="schedule-table-wrap">
+          <table class="matrix-table retro-table">
+            <thead>
+              <tr>
+                <th>Periodo</th>
+                <th class="num">Potencia promedio</th>
+                <th class="num">Energía</th>
+                <th class="num">Estimado (COP)*</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Hoy (desde las 00:00)</strong></td>
+                <td class="num" id="rowTodayWatts">-- W</td>
+                <td class="num strong-amber" id="rowTodayKwh">-- kWh</td>
+                <td class="num strong-green" id="rowTodayCost">--</td>
+              </tr>
+              <tr>
+                <td><strong>Últimas 24 horas</strong></td>
+                <td class="num" id="row24hWatts">-- W</td>
+                <td class="num strong-amber" id="row24hKwh">-- kWh</td>
+                <td class="num strong-green" id="row24hCost">--</td>
+              </tr>
+              <tr>
+                <td><strong>Últimos 7 días</strong></td>
+                <td class="num" id="row7dWatts">-- W</td>
+                <td class="num strong-amber" id="row7dKwh">-- kWh</td>
+                <td class="num strong-green" id="row7dCost">--</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="footnote">
+          * Telemetría por hardware: CPU Intel/AMD RAPL + NVIDIA Management Library + Netdata. Costo estimado con tarifa eléctrica estándar.
+        </p>
+
+        <h4 class="section-title">💾 Almacenamiento y discos</h4>
+        <div class="schedule-table-wrap">
+          <table class="matrix-table retro-table">
+            <thead>
+              <tr>
+                <th>Unidad / disco</th>
+                <th class="num">Tipo</th>
+                <th class="num">Total</th>
+                <th class="num">Disponible</th>
+                <th class="num">% uso</th>
+              </tr>
+            </thead>
+            <tbody id="modalDiskTableBody">
+              <tr><td colspan="5">Cargando telemetría de almacenamiento...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="modal-dialog-footer">
+          <button type="button" class="btn-studio btn-ghost" id="btnRefreshEnergy">🔄 Refrescar</button>
+          <button type="button" class="btn-studio btn-primary" id="btnCloseEnergyModal2">Cerrar</button>
         </div>
       </div>
     </div>

@@ -18,19 +18,57 @@ const IPTV_CORS = {
 const DAY_KEYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
 module.exports = function registerPublicRoutes(app, ctx) {
-  const { db, scheduler, playout, auth, getBaseUrl, port } = ctx;
+  const { db, scheduler, playout, randomPlayout, power, auth, getBaseUrl, port } = ctx;
 
-  // Segmentos HLS. Los nombres son únicos (numeración epoch), así que pueden cachearse
-  // en Cloudflare sin riesgo de servir un segmento viejo; la playlist nunca se cachea.
-  // Solo se sirven playlists y segmentos: las listas internas de FFmpeg (playlist.txt)
-  // viven en la misma carpeta y contienen rutas del servidor.
+  const waitForPlaylist = async (m3u8Path, maxWaitMs = 5000) => {
+    const start = Date.now();
+    while (Date.now() - start < maxWaitMs) {
+      try {
+        if (fs.existsSync(m3u8Path)) {
+          const content = fs.readFileSync(m3u8Path, 'utf8');
+          if (content.includes('#EXTINF')) return true;
+        }
+      } catch (e) {}
+      await new Promise(r => setTimeout(r, 100));
+    }
+    return false;
+  };
+
+  const createChannelHlsMiddleware = (getEngine, fallbackDir) => {
+    return async (req, res, next) => {
+      res.set(IPTV_CORS);
+      if (req.method === 'OPTIONS') return res.sendStatus(204);
+      if (!/\.(m3u8|ts)$/.test(req.path)) return res.sendStatus(404);
+
+      const engine = typeof getEngine === 'function' ? getEngine() : getEngine;
+      const dir = (engine && engine.streamDir) || fallbackDir;
+
+      if (engine && typeof engine.touch === 'function') {
+        engine.touch();
+      }
+
+      if (req.path.endsWith('.m3u8')) {
+        if (ctx.audience) ctx.audience.hit(req);
+        res.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+        res.set('Content-Type', 'application/vnd.apple.mpegurl; charset=utf-8');
+
+        const m3u8File = path.join(dir, path.basename(req.path));
+        await waitForPlaylist(m3u8File);
+      } else if (req.path.endsWith('.ts')) {
+        res.set('Cache-Control', 'public, max-age=86400, immutable');
+        res.set('Content-Type', 'video/mp2t');
+      }
+      next();
+    };
+  };
+
+  // Segmentos HLS Canal 100 (Principal 24/7 continuo)
   app.use('/live', (req, res, next) => {
     res.set(IPTV_CORS);
     if (req.method === 'OPTIONS') return res.sendStatus(204);
     if (!/\.(m3u8|ts)$/.test(req.path)) return res.sendStatus(404);
 
     if (req.path.endsWith('.m3u8')) {
-      // Cada reproductor pide la lista cada ~4 s: así se cuenta la audiencia
       if (ctx.audience) ctx.audience.hit(req);
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
       res.set('Content-Type', 'application/vnd.apple.mpegurl; charset=utf-8');
@@ -41,6 +79,13 @@ module.exports = function registerPublicRoutes(app, ctx) {
     next();
   }, express.static(path.join(__dirname, '..', 'stream'), { etag: false, lastModified: false, cacheControl: false }));
 
+  // HLS Canal 101: Shuffle 24/7 (Bajo demanda / On-demand Eco-Power)
+  const randomDir = path.join(__dirname, '..', 'stream_random');
+  app.use('/random/live',
+    createChannelHlsMiddleware(() => ctx.randomPlayout, randomDir),
+    express.static(randomDir, { etag: false, lastModified: false, cacheControl: false })
+  );
+
   /* ---------- IPTV: M3U y EPG ---------- */
   app.options(['/channel.m3u', '/channel.m3u8', '/playlist.m3u', '/playlist.m3u8', '/epg.xml'], (req, res) => {
     res.set(IPTV_CORS).sendStatus(204);
@@ -49,10 +94,19 @@ module.exports = function registerPublicRoutes(app, ctx) {
   app.get(['/channel.m3u', '/channel.m3u8', '/playlist.m3u', '/playlist.m3u8'], (req, res) => {
     const baseUrl = getBaseUrl(req);
     const id = Scheduler.EPG_CHANNEL_ID;
-    const m3uContent = `#EXTM3U x-tvg-url="${baseUrl}/epg.xml" url-tvg="${baseUrl}/epg.xml"
-#EXTINF:-1 tvg-id="${id}" tvg-name="${process.env.CHANNEL_NAME || 'Home Channel'}" tvg-logo="${baseUrl}/img/logo.png" group-title="General" tvg-chno="1",${process.env.CHANNEL_NAME || 'Home Channel'}
+    const chName = process.env.CHANNEL_NAME || 'Home Channel';
+    let m3uContent = `#EXTM3U x-tvg-url="${baseUrl}/epg.xml" url-tvg="${baseUrl}/epg.xml"
+#EXTINF:-1 tvg-id="${id}" tvg-name="${chName}" tvg-logo="${baseUrl}/img/logo.png" group-title="General" tvg-chno="100",${chName}
 ${baseUrl}/live/channel.m3u8
 `;
+
+    if (randomPlayout) {
+      m3uContent += `
+#EXTINF:-1 tvg-id="random_tv" tvg-name="${randomPlayout.channelName || '24/7 Shuffle'}" tvg-logo="${baseUrl}/img/logo.png" group-title="Variedades" tvg-chno="${randomPlayout.channelNumber || 101}",${randomPlayout.channelName || '24/7 Shuffle'}
+${baseUrl}/random/live/channel.m3u8
+`;
+    }
+
     res.set(IPTV_CORS);
     res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.set('Content-Type', 'application/vnd.apple.mpegurl; charset=utf-8');
@@ -70,7 +124,12 @@ ${baseUrl}/live/channel.m3u8
     const blocks = [...onAir, ...projected];
     const key = `${baseUrl}|${blocks.length ? blocks[0].startTime : ''}|${blocks.length}`;
     if (epgCache.key !== key || Date.now() - epgCache.at > 60000) {
-      epgCache = { key, xml: scheduler.generateXmltv(baseUrl, blocks), at: Date.now() };
+      const extraChannels = randomPlayout ? `  <channel id="random_tv">
+    <display-name>${randomPlayout.channelName || '24/7 Shuffle'}</display-name>
+    <icon src="${baseUrl}/img/logo.png" />
+  </channel>` : '';
+      const extraProgrammes = randomPlayout ? randomPlayout.getXmltvProgrammes(baseUrl, new Date(), 36) : '';
+      epgCache = { key, xml: scheduler.generateXmltv(baseUrl, blocks, { extraChannels, extraProgrammes }), at: Date.now() };
     }
     res.set(IPTV_CORS);
     res.set('Cache-Control', 'public, max-age=60');
@@ -131,6 +190,12 @@ ${baseUrl}/live/channel.m3u8
     res.json(body);
   });
 
+
+  app.get('/api/system/power', async (req, res) => {
+    if (!auth.isAuthorized(req)) return res.status(401).json({ error: 'No autorizado' });
+    if (!power) return res.json({ success: false, error: 'Módulo de energía no disponible' });
+    res.json(await power.get());
+  });
 
   /* ---------- Videoteca pública ---------- */
   app.get('/api/media', (req, res) => {

@@ -53,10 +53,19 @@ for (const dir of [uploadsTempDir, ingestDir]) {
 }
 
 /* ---------- Módulos del sistema ---------- */
+const PowerTelemetry = require('./lib/power');
+const RandomEngine = require('./random/RandomEngine');
+
 const db = new Database();
 const scheduler = new Scheduler(db);
 const transcoder = new Transcoder(db, scheduler);
 const playout = new PlayoutEngine(scheduler);
+const power = new PowerTelemetry();
+const randomPlayout = new RandomEngine(db, {
+  streamDir: path.join(__dirname, 'stream_random'),
+  channelNumber: 101,
+  channelName: process.env.RANDOM_CHANNEL_NAME || '24/7 Shuffle Channel'
+});
 
 // Cortinillas "A continuación" y carteleras nuevas: la cola de 24 h se arma con los clips
 // que ya existían, así que al terminar una tanda se reprograma en el próximo :00/:30
@@ -146,7 +155,7 @@ const audience = AudienceTracker.fromDb(db, {
   getProgram: () => programName(playout.currentTrack && playout.currentTrack.blockTitle)
 });
 
-const ctx = { db, scheduler, transcoder, playout, auth, programming, schedule, radio, audience, getBaseUrl, port: PORT, mediaRoot, uploadsTempDir, ingestDir };
+const ctx = { db, scheduler, transcoder, playout, randomPlayout, power, auth, programming, schedule, radio, audience, getBaseUrl, port: PORT, mediaRoot, uploadsTempDir, ingestDir };
 
 /* ---------- Autenticación ---------- */
 auth.registerRoutes(app);
@@ -235,6 +244,15 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
   // Radio: escanea la música y pone al aire las emisoras que tengan temas
   radio.start().catch(e => console.warn('[Radio] Error al iniciar:', e.message));
 
+  // Canal secundario bajo demanda (On-Demand / Eco-Power):
+  // Permanece en reposo (0% GPU/CPU) hasta que un usuario lo sintonice, y se apaga tras 3 min de inactividad.
+  try {
+    randomPlayout.startInactivityWatchdog();
+    console.log('[Canal 101] 💤 Modo bajo demanda (On-Demand) activo: en reposo hasta recibir sintonía.');
+  } catch (e) {
+    console.warn('[Canal 101] Error al inicializar watchdog de inactividad:', e.message);
+  }
+
   // Auditoría de duraciones: si alguna estaba mal registrada, la emisión se recalcula
   setTimeout(auditDurations, DURATION_AUDIT_FIRST_MS);
   setInterval(auditDurations, DURATION_AUDIT_EVERY_MS);
@@ -274,6 +292,7 @@ async function shutdown(signal) {
 
   audience.stop();
   playout.stop();
+  randomPlayout.stop();
   radio.stop();
   db.flushLocalJsonSync();
   server.close();

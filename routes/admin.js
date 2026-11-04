@@ -15,7 +15,7 @@ const { loadProfiles } = require('../programming/profiles');
 
 
 module.exports = function registerAdminRoutes(app, ctx) {
-  const { db, scheduler, transcoder, playout, auth, mediaRoot, programming } = ctx;
+  const { db, scheduler, transcoder, playout, randomPlayout, power, auth, mediaRoot, programming } = ctx;
 
   const requireAdmin = async (req, res, next) => {
     await auth.ready();
@@ -642,5 +642,87 @@ module.exports = function registerAdminRoutes(app, ctx) {
 
     res.setHeader('Content-Type', contentType);
     res.sendFile(filePath);
+  });
+
+  /* ========================================================
+     CANALES 24/7 (MULTICANAL: PRINCIPAL + SHUFFLE ON-DEMAND)
+     ======================================================== */
+
+  app.get('/api/admin/channels', requireAdmin, (req, res) => {
+    const playoutStatus = playout.getStatus();
+    const channels = [
+      {
+        id: 'main',
+        number: 100,
+        name: `${process.env.CHANNEL_NAME || 'Home Channel'} (Principal)`,
+        description: 'Señal lineal 24/7 con sincronización al reloj, parrilla e intersticiales',
+        isRunning: playout.isRunning,
+        cycle: 1,
+        totalEpisodes: (db.getShows() || []).reduce((acc, s) => acc + (s.episodes || []).length, 0),
+        currentProgram: playoutStatus.currentTrack ? {
+          title: playoutStatus.currentTrack.name || playoutStatus.currentTrack.title,
+          showTitle: playoutStatus.currentTrack.showTitle || process.env.CHANNEL_NAME || 'Home Channel',
+          duration: playoutStatus.currentTrack.duration,
+          elapsed: playoutStatus.currentTrack.elapsed || 0
+        } : null,
+        hlsUrl: '/live/channel.m3u8'
+      }
+    ];
+
+    if (randomPlayout) {
+      channels.push({
+        id: 'random',
+        number: randomPlayout.channelNumber || 101,
+        name: randomPlayout.channelName || '24/7 Shuffle Channel',
+        description: 'Emisión aleatoria continua con modo bajo demanda (Eco-Power)',
+        isRunning: randomPlayout.isRunning,
+        ...randomPlayout.getStatus(),
+        hlsUrl: '/random/live/channel.m3u8'
+      });
+    }
+
+    res.json({ success: true, channels });
+  });
+
+  app.post('/api/admin/channels/:id/toggle', requireAdmin, (req, res) => {
+    const { id } = req.params;
+    if (id === 'main' || id === 'crhe') {
+      if (playout.isRunning) playout.stop();
+      else playout.start();
+      return res.json({ success: true, isRunning: playout.isRunning });
+    }
+    if (id === 'random' && randomPlayout) {
+      const result = randomPlayout.toggleRunning();
+      return res.json({ success: true, isRunning: randomPlayout.isRunning, ...result });
+    }
+    res.status(404).json({ error: 'Canal no encontrado' });
+  });
+
+  app.post('/api/admin/channels/:id/reset-cycle', requireAdmin, (req, res) => {
+    const { id } = req.params;
+    if (id === 'random' && randomPlayout) {
+      const result = randomPlayout.resetCycle();
+      return res.json({ success: true, ...result });
+    }
+    res.status(404).json({ error: 'Canal no encontrado o no admite reinicio de ciclo' });
+  });
+
+  app.get('/api/admin/channels/random/shows', requireAdmin, (req, res) => {
+    if (!randomPlayout) return res.status(500).json({ error: 'Motor Random no inicializado' });
+    const selection = randomPlayout.getShowsSelection();
+    res.json({ success: true, shows: selection });
+  });
+
+  app.post('/api/admin/channels/random/shows', requireAdmin, async (req, res) => {
+    if (!randomPlayout) return res.status(500).json({ error: 'Motor Random no inicializado' });
+    const { showIds } = req.body || {};
+    if (!Array.isArray(showIds)) {
+      return res.status(400).json({ error: 'showIds debe ser un array de identificadores de series' });
+    }
+    if (db.setJsonSetting) {
+      await db.setJsonSetting('random_channel_config', { showIds });
+    }
+    const result = randomPlayout.rebuildAndRestart();
+    res.json(result);
   });
 };

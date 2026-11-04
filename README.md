@@ -17,12 +17,14 @@
 
 - 🛰️ **24/7 Continuous HLS Stream:** Fast-start, low-buffer linear broadcasting with smooth playback on web browsers, Smart TVs, Android TV, Apple TV, and IPTV apps (VLC, Kodi, TiviMate).
 - 🕒 **Strict Clock-Aligned Slots:** Automatically synchronizes shows to exact half-hour and hour marks (`:00` and `:30`). Never drifts across the broadcast day.
+- 🌿 **On-Demand Eco-Power Multichannel:** Run secondary channels (e.g. 24/7 Shuffle or thematic loops) with **zero idle CPU/GPU consumption**. Channels stay dormant at boot, wake instantly (<1.2s) upon HLS tuning, remember playback offset, and automatically shut down after 3 minutes of inactivity.
+- ⚡ **Real Hardware Power Telemetry:** Real-time Intel/AMD RAPL CPU package power, GPU encoder power, and base wattage via Netdata integration, with daily/monthly kWh accumulation and customizable cost estimation.
 - 📼 **Intelligent Interstitial Composer:** Dynamically fills commercial breaks between episodes with intro bumpers (*"You're watching..."*), non-repeating ad spots, station idents, and closing previews (*"Coming up next..."*).
 - 🎙️ **Dynamic Next-Up Graphics & Voiceovers:** Renders on-the-fly vector SVG billboards and announces upcoming shows using neural TTS (ElevenLabs API or local edge-tts).
 - 📻 **Integrated 24/7 FM-Style Radio Station:** Dedicated audio HLS stream with automated DJ tracks (written by local LLM via Ollama, voiced with neural edge-tts), anti-repetition artist rotation, periodic station jingles, and a retro 90s Hi-Fi tuner web interface with live RDS track metadata.
-- 📅 **Rule-Based Weekly Grid & EPG:** Intuitive drag-and-drop schedule planner, automated daily episode progression, weekend marathons, and XMLTV EPG export (`/epg.xml`).
+- 📅 **Rule-Based Weekly Grid & EPG:** Intuitive drag-and-drop schedule planner, automated daily episode progression, holiday calendar support, weekend marathons, and XMLTV EPG export (`/epg.xml`).
 - ⚡ **Multi-Platform Hardware Acceleration:** Supports NVIDIA NVENC, Intel QuickSync/VAAPI, Apple Silicon VideoToolbox, and high-efficiency CPU fallback (`libx264`).
-- 🎛️ **Web Master Control Studio:** Desktop-grade admin control room to monitor stream health, override items on air, manage transcode queues, and inspect viewer analytics.
+- 🎛️ **Web Master Control Studio:** Desktop-grade admin control room to monitor stream health, manage 24/7 channels, override items on air, and inspect viewer analytics with lightweight modal show management.
 - 🌐 **Built-in Bilingual i18n:** Full English and Spanish localization out of the box, with an extensible JSON dictionary system to easily add any language.
 - 📂 **Legal Media Ingest:** Purely designed for personal video archives, creative commons, public domain content, camera recordings, and local HDMI captures. No scrapers or copyright infringement.
 
@@ -56,7 +58,8 @@ docker compose up -d
 That's it! Your station is now live:
 - 📺 **Public TV Player:** [http://localhost:3000](http://localhost:3000)
 - 🎛️ **Master Control Studio:** [http://localhost:3000/admin](http://localhost:3000/admin)
-- 📡 **Live TV HLS Stream:** `http://localhost:3000/live/channel.m3u8`
+- 📡 **Main Live HLS Stream (CH-100):** `http://localhost:3000/live/channel.m3u8`
+- 🎲 **Shuffle Live HLS Stream (CH-101):** `http://localhost:3000/random/live/channel.m3u8`
 - 📻 **24/7 FM-Style Radio Stream:** `http://localhost:3000/live/radio/main/radio.m3u8`
 - 📑 **XMLTV EPG Guide:** `http://localhost:3000/epg.xml`
 - 📋 **IPTV M3U Playlist:** `http://localhost:3000/channel.m3u`

@@ -158,8 +158,18 @@ class Transcoder extends EventEmitter {
     try {
       if (typeof this.db.refreshJobs === 'function') await this.db.refreshJobs().catch(() => {});
       else if (typeof this.db.refresh === 'function') await this.db.refresh().catch(() => {});
+      const allDbJobs = this.db.getTranscodeJobs() || [];
+      const dbJobMap = new Map(allDbJobs.map(j => [j.id, j]));
+
+      // Purgar de la cola en memoria trabajos eliminados de DB o que ya no están pendientes
+      const beforeLen = this.queue.length;
+      this.queue = this.queue.filter(j => dbJobMap.has(j.id) && dbJobMap.get(j.id).status === 'pending');
+      if (beforeLen !== this.queue.length) {
+        console.log(`[Transcoder] 🧹 Purgados ${beforeLen - this.queue.length} trabajos obsoletos/eliminados de la cola en memoria.`);
+      }
+
       const known = new Set([...this.queue.map(j => j.id), ...this.activeJobs.map(j => j.id)]);
-      const pending = (this.db.getTranscodeJobs() || [])
+      const pending = allDbJobs
         .filter(j => (j.status === 'pending' || j.status === 'processing') && !known.has(j.id));
       if (pending.length) {
         if (typeof this.db.refresh === 'function') await this.db.refresh().catch(() => {});

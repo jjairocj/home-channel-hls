@@ -16,12 +16,14 @@
 
 - 🛰️ **Emisión Continua HLS 24/7:** Transmisión lineal fluida, de arranque rápido y búfer reducido, compatible directamente con navegadores web, Smart TVs, Android TV, Apple TV y aplicaciones IPTV (VLC, Kodi, TiviMate).
 - 🕒 **Sincronización Estricta de Reloj:** Bloques horarios exactos alineados a la hora en punto (`:00`) y a la media hora (`:30`). La programación nunca se desfasa a lo largo del día.
+- 🌿 **Modo Multicanal Eco-Power Bajo Demanda:** Canales secundarios (como Canal 101 Shuffle o temáticos) que permanecen en reposo (**0% de uso de CPU y GPU**) hasta que un reproductor los sintoniza. Despertar en <1.2s, guardado de posición y apagado automático tras 3 minutos sin televidentes.
+- ⚡ **Telemetría de Consumo Eléctrico Real:** Medición de Watts en tiempo real mediante integración con Netdata y RAPL de Intel/AMD, potencia de encoder GPU NVIDIA, acumulación de kWh diarios/mensuales y estimación de costos en moneda local.
 - 📼 **Compositor Inteligente de Cortes Comerciales:** Llena dinámicamente las pausas entre episodios con cortinillas de apertura (*"Estás viendo..."*), comerciales sin repetición consecutiva, idents temáticos y adelantos de cierre (*"A continuación..."*).
 - 🎙️ **Carteleras y Locución Dinámica:** Genera gráficos vectoriales SVG en tiempo real y anuncia los próximos programas mediante voces neuronales (ElevenLabs API o síntesis local con edge-tts).
 - 📻 **Emisora de Radio Estilo FM 24/7 Integrada:** Flujo de audio HLS dedicado con presentaciones de DJ automatizadas (escritas con LLM local vía Ollama y sintetizadas con edge-tts), rotación musical sin repetición consecutiva de artistas, jingles periódicos y sintonizador web retro estilo Hi-Fi de los 90 con display digital RDS.
-- 📅 **Parrilla Semanal y EPG por Reglas:** Planificador visual de programación, avance automático de capítulos diarios, maratones de fin de semana y exportación de guía XMLTV (`/epg.xml`).
+- 📅 **Parrilla Semanal y EPG por Reglas:** Planificador visual de programación, avance automático de capítulos diarios, calendario de festivos, maratones de fin de semana y exportación de guía XMLTV (`/epg.xml`).
 - ⚡ **Aceleración por Hardware Multiplataforma:** Soporte para NVIDIA NVENC, Intel QuickSync/VAAPI, Apple Silicon VideoToolbox y respaldo ultra-eficiente por CPU (`libx264`).
-- 🎛️ **Estudio Web Master Control:** Panel de administración profesional para monitorear la señal en tiempo real, saltar contenidos al aire, gestionar la cola de codificación y ver métricas de audiencia.
+- 🎛️ **Estudio Web Master Control:** Panel de administración profesional para monitorear la señal en tiempo real, gestionar canales 24/7, saltar contenidos al aire, administrar series con modal ultraligero y consultar métricas de audiencia.
 - 🌐 **Internacionalización Bilingüe Integrada:** Interfaz 100% traducida a Español e Inglés, con un sistema de diccionarios JSON abierto para que cualquiera pueda traducirlo a su idioma.
 - 📂 **Ingesta Legal de Medios:** Diseñado exclusivamente para producciones propias, archivos de video personales, capturas HDMI de circuito cerrado, material Creative Commons y de dominio público. Cero scrapers ni descargas no autorizadas.
 
@@ -55,7 +57,8 @@ docker compose up -d
 ¡Listo! Tu estación de televisión está al aire:
 - 📺 **Reproductor Web Público:** [http://localhost:3000](http://localhost:3000)
 - 🎛️ **Master Control Studio:** [http://localhost:3000/admin](http://localhost:3000/admin)
-- 📡 **Flujo TV HLS en Vivo:** `http://localhost:3000/live/channel.m3u8`
+- 📡 **Flujo TV Principal (CH-100) en Vivo:** `http://localhost:3000/live/channel.m3u8`
+- 🎲 **Flujo TV Shuffle (CH-101) en Vivo:** `http://localhost:3000/random/live/channel.m3u8`
 - 📻 **Flujo Radio Estilo FM en Vivo:** `http://localhost:3000/live/radio/main/radio.m3u8`
 - 📑 **Guía de TV XMLTV (EPG):** `http://localhost:3000/epg.xml`
 - 📋 **Lista IPTV M3U:** `http://localhost:3000/channel.m3u`

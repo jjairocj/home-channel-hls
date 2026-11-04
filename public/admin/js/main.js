@@ -21,13 +21,16 @@ import { initProgramming } from './programming.js';
 import { initProgrammer } from './programmer/index.js';
 import { initEpisodes, refreshUpcoming } from './episodes.js';
 import { initBumpers, refreshBumpers } from './bumpers.js';
+import { initChannels } from './channels.js';
+import { EnergyPanel } from './energy.js';
 import { initLayout } from './layout.js';
 import { initShell } from './shell.js';
 
-const POLL = { transcode: 2000, live: 3000, downloads: 3000, programming: 60000, audience: 15000 };
+const POLL = { transcode: 2000, live: 3000, downloads: 3000, programming: 60000, audience: 15000, energy: 5000 };
 
 let audience = null;
-const refreshLive = () => refreshLiveStatus();
+let energy = null;
+const refreshLive = () => refreshLiveStatus((power) => energy && energy.update(power));
 
 async function loadAll() {
   await reload('episodic');
@@ -59,14 +62,18 @@ function start() {
     initBatchImport();
     initProgramming();
   audience = new AudiencePanel();
+  energy = new EnergyPanel();
+  initChannels();
   initProgrammer();
   initEpisodes();
   initScheduleBlocks();
 
   loadAll();
+  energy.fetch();
   const whenVisible = (fn) => () => { if (!document.hidden) fn(); };
   setInterval(whenVisible(refreshTranscode), POLL.transcode);
   setInterval(whenVisible(refreshLive), POLL.live);
+  setInterval(whenVisible(() => energy.fetch()), POLL.energy);
     setInterval(whenVisible(() => reload('programming')), POLL.programming);
   audience.refresh();
   setInterval(whenVisible(() => audience.refresh()), POLL.audience);

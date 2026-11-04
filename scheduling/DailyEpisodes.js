@@ -1,5 +1,5 @@
 /**
- * Home Channel HLS - "Capítulo del día / de la semana", como en la TV tradicional.
+ * CrHe X-99 - "Capítulo del día / de la semana", como en la TV tradicional.
  *
  * Cada serie (o grupo de temporadas) emite UN capítulo nuevo por periodo:
  *   - series diarias: por día de transmisión (06:00 → 06:00; lo de 05:00-06:00 son
@@ -23,9 +23,10 @@
  */
 
 const { broadcastDay, broadcastWeek } = require('../core/time');
+const { isColombianHoliday } = require('../core/holidays');
 
-/** ¿El día de transmisión (AAAA-MM-DD) cae en sábado o domingo? */
-const isWeekendDay = (day) => [0, 6].includes(new Date(`${day}T12:00:00`).getDay());
+/** ¿El día de transmisión (AAAA-MM-DD) cae en fin de semana o festivo en Colombia? */
+const isWeekendDay = (day) => [0, 6].includes(new Date(`${day}T12:00:00`).getDay()) || isColombianHoliday(day);
 /** Periodos de días (no de semanas) guardados en el historial. */
 const isDayPeriod = (period) => /^\d{4}-\d{2}-\d{2}$/.test(period);
 /** Entradas de historial que se conservan por serie. */
@@ -161,19 +162,41 @@ class DailyEpisodes {
   /** Episodios ya estrenados en el periodo (según lo guardado) que siguen en la mediateca. */
   airedInPeriod(ref, period) {
     const entry = this.historyOf(ref).find(h => h.day === period);
-    return entry ? this.resolveEpisodes(entry.episodes) : [];
+    const resolved = entry ? this.resolveEpisodes(entry.episodes) : [];
+    if (!resolved.length) return [];
+    if (resolved[0].episode.duration >= SHORT_EPISODE_SECONDS) {
+      return [resolved[0]];
+    }
+    return resolved.slice(0, 2);
   }
 
   /**
    * Capítulo(s) del día de una referencia. La primera llamada del día decide el
    * capítulo (estreno); las siguientes devuelven el mismo marcado como repetición.
+   * Con mode: 'next' (o 'sequential') avanza siempre al siguiente episodio sin repetir.
    * @param {number} [airing] - número de emisión (solo para series episódicas)
+   * @param {Object} [options]
+   * @param {'daily'|'next'|'sequential'} [options.mode]
    * @returns {Array<{prog, episode, repeat}>|null}
    */
-  unit(ref, date, airing = 0) {
+  unit(ref, date, airing = 0, { mode = 'daily' } = {}) {
     if (this.isEpisodic(ref)) return this.episodicUnit(ref, airing);
     const period = this.periodOf(ref, date);
     const key = `${ref.key}|${period}`;
+
+    if (mode === 'next' || mode === 'sequential') {
+      const first = this.takeNext(ref);
+      if (!first) return null;
+      const picks = [first];
+      if (picks.length === 1 && picks[0].episode.duration < SHORT_EPISODE_SECONDS) {
+        const second = this.takeNext(ref);
+        if (second && second.episode.id !== picks[0].episode.id) picks.push(second);
+      }
+      if (!this.units.has(key)) this.units.set(key, picks);
+      this.notePremiere(ref, period, picks);
+      return picks.map(p => ({ ...p, repeat: false }));
+    }
+
     if (this.units.has(key)) return this.units.get(key).map(p => ({ ...p, repeat: true }));
 
     let picks = this.airedInPeriod(ref, period);
