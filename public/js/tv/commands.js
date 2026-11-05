@@ -1,5 +1,5 @@
 /**
- * Home Channel HLS - Controles del televisor (patrón Command).
+ * CrHe X-99 - Controles del televisor (patrón Command).
  *
  * Cada acción tiene un nombre; el bisel, el control remoto y el teclado solo son
  * tablas que asignan botones/teclas a esas acciones.
@@ -18,7 +18,6 @@ const BEZEL = {
   btnBezelDegauss: 'degauss',
   btnBezelCrtFx: 'crt',
   btnBezelBillboard: 'billboard',
-  btnBezelRadio: 'toggleRadio',
   btnBezelFullscreen: 'fullscreen'
 };
 

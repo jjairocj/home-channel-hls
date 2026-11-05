@@ -1,28 +1,58 @@
 /**
- * Home Channel HLS - "Canales" del televisor: identidades visuales de la misma señal.
+ * CrHe X-99 - "Canales" del televisor: identidades visuales de la misma señal.
  */
 
 import { $ } from '../../shared/dom.js';
 
 export const CHANNEL_PRESETS = [
-  { id: 'radikal', name: 'RADIKAL', ch: 'CH-99', ticker: 'CANAL Home Channel HLS // TRANSMISIÓN SATELITAL 1999 // ANIME DE CULTO • ADULT SWIM • MÚSICA ELECTRÓNICA // ' },
-  { id: 'cyber', name: 'CYBER', ch: 'CH-88', ticker: 'Home Channel HLS // FRECUENCIA ALTERNATIVA // EMISIÓN CONTINUA DE ANIME RETRO, CORTINILLAS Y RAREZAS // ' },
-  { id: 'nocturna', name: 'NOCTURNA', ch: 'CH-69', ticker: 'Home Channel NOCTURNA // ANIME DE CULTO • ADULT SWIM • COMERCIALES RETRO // ' },
-  { id: 'clasico', name: 'CLÁSICO', ch: 'CH-01', ticker: 'Home Channel HLS // SEÑAL SATELITAL TRANS-AMÉRICAS 1999 // ANIME Y ANIMACIÓN PARA ADULTOS // ' },
-  { id: 'radio_fm', name: 'RADIO FM 99.1', ch: 'FM-99', isRadio: true, ticker: 'Home Channel RADIO 99.1 FM // EMISIÓN NOVENTERA // ROCK • METAL • ANIME OST • SYNTHWAVE // ' }
+  {
+    id: 'crhe_tv',
+    name: 'CrHe TV',
+    ch: 'CH-100',
+    display: '100',
+    streamUrl: '/live/channel.m3u8?src=web',
+    ticker: 'CANAL 100 // CrHe X-99 // TRANSMISIÓN SATELITAL 1999 // ANIME DE CULTO • ADULT SWIM • MÚSICA ELECTRÓNICA // '
+  },
+  {
+    id: 'simpsons',
+    name: 'LOS SIMPSONS',
+    ch: 'CH-101',
+    display: '101',
+    streamUrl: '/simpsons/live/channel.m3u8?src=web',
+    ticker: 'CANAL 101 // LOS SIMPSONS 24/7 // EMISIÓN CONTINUA ALEATORIA DE TODAS LAS TEMPORADAS // SPRINGFIELD SIN LÍMITES // '
+  },
+  {
+    id: 'futurama',
+    name: 'FUTURAMA',
+    ch: 'CH-102',
+    display: '102',
+    streamUrl: '/futurama/live/channel.m3u8?src=web',
+    ticker: 'CANAL 102 // FUTURAMA 24/7 // EMISIÓN CONTINUA ALEATORIA DE TODAS LAS TEMPORADAS // NUEVA NUEVA YORK SIGLO XXXI // '
+  },
+  {
+    id: 'random',
+    name: 'RANDOM 24/7',
+    ch: 'CH-103',
+    display: '103',
+    streamUrl: '/random/live/channel.m3u8?src=web',
+    ticker: 'CANAL 103 // RANDOM 24/7 // SHUFFLE DE SERIES ALEATORIAS // SPRINGFIELD • NUEVA YORK 3000 • MULTIVERSO // '
+  }
 ];
 
-const BRAND = 'Home Channel';
+const BRAND = 'CrHe X-99';
 
-/** Pinta la identidad del canal (el nombre siempre es Home Channel; cambia el "apellido"). */
+/** Pinta la identidad del canal (el nombre siempre es CrHe X-99; cambia el "apellido"). */
 export function paintPreset(preset, tv = null) {
   const set = (el, text) => { if (el) el.textContent = text; };
-  set($('brandBoxText'), BRAND);
+  const brandName = preset.id === 'simpsons' ? 'SIMPSONS' : (preset.id === 'futurama' ? 'FUTURAMA' : (preset.id === 'random' ? 'RANDOM' : BRAND));
+  const billboardName = preset.id === 'simpsons' ? 'Los Simpsons 24/7' : (preset.id === 'futurama' ? 'Futurama 24/7' : (preset.id === 'random' ? 'Random 24/7' : BRAND));
+  set($('brandBoxText'), brandName);
   set($('brandNameText'), preset.name);
+  set($('brandFreqText'), `${preset.ch} · BANDA KU`);
   set($('osdChannel'), preset.ch);
-  set($('channelDisplay7Seg'), preset.ch);
-  set(document.querySelector('.billboard-brand'), BRAND);
-  set($('tickerText'), `${preset.ticker} AUDIO MTS STEREO // EMISIÓN CONTINUA 24 HORAS // SEÑAL SATELITAL RADIKAL // `);
+  set($('channelDisplay7Seg'), preset.display || preset.ch);
+  set(document.querySelector('.billboard-brand'), billboardName);
+  set($('tickerText'), `${preset.ticker} AUDIO MTS STEREO // EMISIÓN CONTINUA 24 HORAS // `);
   const select = $('channelNameSelect');
   if (select) select.value = preset.id;
 
@@ -50,5 +80,10 @@ export function paintPreset(preset, tv = null) {
       }
     }
     if (osd) osd.style.display = '';
+
+    // Sintonizar la señal HLS del canal correspondiente
+    if (preset.streamUrl && window._livePlayer) {
+      window._livePlayer.loadStream(preset.streamUrl);
+    }
   }
 }

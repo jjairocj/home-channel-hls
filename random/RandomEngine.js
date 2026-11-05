@@ -76,6 +76,7 @@ class RandomEngine extends EventEmitter {
     this.lastHitAt = 0;
     this.idleTimeoutMs = 3 * 60 * 1000;
     this.inactivityTimer = null;
+    this.isOnDemand = config.isOnDemand !== undefined ? config.isOnDemand : true;
     this.allEpisodes = [];
 
     startSegmentJanitor(this.streamDir);
@@ -415,7 +416,7 @@ class RandomEngine extends EventEmitter {
     const elapsed = Math.max(0, offset - startSec);
     return {
       isRunning: this.isRunning,
-      isOnDemand: true,
+      isOnDemand: this.isOnDemand,
       channelId: 'random_24_7',
       channelNumber: this.channelNumber,
       channelName: this.channelName,

@@ -59,11 +59,11 @@ const scheduler = new Scheduler(db);
 const transcoder = new Transcoder(db, scheduler);
 const playout = new PlayoutEngine(scheduler);
 const SimpsonsEngine = require('./simpsons/SimpsonsEngine');
-const simpsonsPlayout = new SimpsonsEngine(db);
+const simpsonsPlayout = new SimpsonsEngine(db, { isOnDemand: false });
 const FuturamaEngine = require('./futurama/FuturamaEngine');
-const futuramaPlayout = new FuturamaEngine(db);
+const futuramaPlayout = new FuturamaEngine(db, { isOnDemand: false });
 const RandomEngine = require('./random/RandomEngine');
-const randomPlayout = new RandomEngine(db);
+const randomPlayout = new RandomEngine(db, { isOnDemand: false });
 
 // Cortinillas "A continuación" y carteleras nuevas: la cola de 24 h se arma con los clips
 // que ya existían, así que al terminar una tanda se reprograma en el próximo :00/:30
@@ -232,18 +232,17 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
   // Revisión automática de la programación (propone; nunca aplica sin aprobación)
   programming.start();
 
-  // Radio: escanea la música y pone al aire las emisoras que tengan temas
-  radio.start().catch(e => console.warn('[Radio] Error al iniciar:', e.message));
+  // Radio: pausada temporalmente (inactiva sin procesos en background)
+  // radio.start().catch(e => console.warn('[Radio] Error al iniciar:', e.message));
 
-  // Canales secundarios bajo demanda (On-Demand / Eco-Power):
-  // Permanecen en reposo (0% GPU/CPU) hasta que un usuario los sintonice, y se apagan tras 3 min de inactividad.
+  // Canales 101, 102 y 103 siempre activos 24/7 (Always-On para sintonía instantánea sin cortes ni retardos)
   try {
-    simpsonsPlayout.startInactivityWatchdog();
-    futuramaPlayout.startInactivityWatchdog();
-    randomPlayout.startInactivityWatchdog();
-    console.log('[Canales 101/102/103] 💤 Modo bajo demanda (On-Demand) activo: en reposo hasta recibir sintonía.');
+    simpsonsPlayout.start();
+    futuramaPlayout.start();
+    randomPlayout.start();
+    console.log('[Canales 101/102/103] 📺 Canales 24/7 activos en transmisión continua.');
   } catch (e) {
-    console.warn('[Canales Secundarios] Error al inicializar watchdogs de inactividad:', e.message);
+    console.warn('[Canales Secundarios] Error al iniciar canales 24/7:', e.message);
   }
 
   // Auditoría de duraciones: si alguna estaba mal registrada, la emisión se recalcula
