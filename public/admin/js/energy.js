@@ -1,5 +1,5 @@
 /**
- * Home Channel HLS Master Control - Consumo eléctrico del servidor (tarjeta y ventana).
+ * CrHe X-99 Master Control - Consumo eléctrico del servidor (tarjeta y ventana).
  */
 
 import { setText, withBusy, $ } from '/shared/dom.js';
@@ -64,10 +64,12 @@ export class EnergyPanel {
       const isPrimary = d.id === 'primary';
       const level = d.usedPercent > 90 ? 'disk-full' : (d.usedPercent > 75 ? 'disk-warn' : 'disk-ok');
 
+      const isSsd = ['ssd', 'scratch', 'os'].includes(d.id);
+
       return `
         <tr class="disk-row${isPool ? ' pool' : ''}">
           <td class="${isPool || isPrimary ? 'disk-name' : ''}">
-            ${isPool ? '🌟 ' : (d.id === 'ssd' ? '⚡ ' : '💾 ')}${escapeHtml(d.label || d.id)}
+            ${isPool ? '🌟 ' : (isSsd ? '⚡ ' : '💾 ')}${escapeHtml(d.label || d.id)}
           </td>
           <td class="num">${escapeHtml(d.description || '--')}</td>
           <td class="num">${escapeHtml(d.totalFormatted || '--')}</td>
@@ -79,9 +81,10 @@ export class EnergyPanel {
 
     if (disk.total && list.length > 1) {
       const t = disk.total;
+      const physicalCount = list.filter(x => x.id !== 'pool').length;
       rows += `
         <tr>
-          <td class="total-row disk-name" colspan="2">Capacidad total del servidor (${list.length} discos)</td>
+          <td class="total-row disk-name" colspan="2">Capacidad física total del servidor (${physicalCount} discos)</td>
           <td class="total-row num disk-name">${escapeHtml(t.totalFormatted || '--')}</td>
           <td class="total-row num disk-ok">${escapeHtml(t.freeFormatted || '--')}</td>
           <td class="total-row num disk-ok">${escapeHtml(t.usedPercent)}%</td>
