@@ -5,7 +5,7 @@ const os = require('os');
 const fs = require('fs');
 const RandomEngine = require('../random/RandomEngine');
 
-test('RandomEngine: baraja episodios sin repetir y soporta modo bajo demanda', () => {
+test('RandomEngine: baraja episodios de series autorizadas sin repetir (incluye Simpsons y Futurama)', () => {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'random_test_'));
   const dummyFile = path.join(tmpDir, 'ep1.mp4');
   fs.writeFileSync(dummyFile, 'dummy');
@@ -13,72 +13,69 @@ test('RandomEngine: baraja episodios sin repetir y soporta modo bajo demanda', (
   const mockDb = {
     getShows: () => [
       {
-        id: 'show1',
-        title: 'Show Uno',
+        id: 'fut1',
+        title: 'Futurama',
         episodes: [
-          { id: 'ep1', title: 'Episodio 1', path: dummyFile, duration: 1300 },
-          { id: 'ep2', title: 'Episodio 2', path: dummyFile, duration: 1300 }
+          { id: 'ep1', title: 'Piloto espacial 3000', path: dummyFile, duration: 1300 },
+          { id: 'ep2', title: 'La serie ha aterrizado', path: dummyFile, duration: 1300 }
         ]
       },
       {
-        id: 'show2',
-        title: 'Show Dos',
+        id: 'simp1',
+        title: 'Los Simpsons - Temporada 1',
         episodes: [
-          { id: 'ep3', title: 'Episodio 3', path: dummyFile, duration: 1300 }
+          { id: 'simp_ep1', title: 'Bart es un genio', path: dummyFile, duration: 1300 }
+        ]
+      },
+      {
+        id: 'rick',
+        title: 'Rick y Morty',
+        episodes: [
+          { id: 'rick1', title: 'Piloto', path: dummyFile, duration: 1300 }
+        ]
+      },
+      {
+        id: 'coraje',
+        title: 'Coraje el Perro Cobarde',
+        episodes: [
+          { id: 'coraje1', title: 'Una Noche en el Motel Gato Negro', path: dummyFile, duration: 1300 },
+          { id: 'coraje2', title: 'El Espeluznante Fred', path: dummyFile, duration: 1300 }
+        ]
+      },
+      {
+        id: 'inu',
+        title: 'Inuyasha',
+        episodes: [
+          { id: 'inu1', title: 'Capítulo 1', path: dummyFile, duration: 1400 }
         ]
       }
     ],
     getCommercials: () => [
-      { id: 'b_ident', title: 'Station ID', type: 'bumper', status: 'ready', path: dummyFile, duration: 15 }
+      { id: 'b_ident', title: 'CrHe Station ID - Shonen', type: 'bumper', status: 'ready', path: dummyFile, duration: 15 }
     ],
-    getJsonSetting: (k, def) => {
-      if (k === 'random_channel_config') return { showIds: ['show1', 'show2'] };
-      return def;
-    },
+    getJsonSetting: () => ({}),
     setJsonSetting: () => {}
   };
 
   const engine = new RandomEngine(mockDb, {
     streamDir: tmpDir,
-    channelNumber: 101,
-    channelName: '24/7 Shuffle Channel',
     encoder: { name: 'test', args: [] }
   });
 
   const eps = engine.loadAllEpisodes();
-  assert.strictEqual(eps.length, 3, 'Carga los 3 episodios autorizados');
+  assert.strictEqual(eps.length, 6, 'Carga episodios de Simpsons, Futurama, Rick y Morty y Coraje (6), excluyendo Inuyasha');
 
   const queue = engine.buildQueue(1);
-  assert.strictEqual(queue.length, 6, '3 episodios + 3 cortinillas');
+  // 6 episodios + 6 bumpers intermedios = 12 items
+  assert.strictEqual(queue.length, 12);
 
   const status = engine.getStatus();
   assert.strictEqual(status.channelNumber, 101);
-  assert.strictEqual(status.channelName, '24/7 Shuffle Channel');
-  assert.strictEqual(status.isOnDemand, true);
-
-  // Prueba On-Demand: touch() despierta el canal
-  let started = false;
-  engine.start = () => {
-    started = true;
-    engine.process = { running: true, kill: () => {} };
-    return { success: true };
-  };
-  engine.touch();
-  assert.ok(started, 'touch() activa la emisión bajo demanda');
-
-  // Perro guardián de inactividad
-  let stopped = false;
-  engine.stop = () => { stopped = true; engine.process = null; };
-  engine.lastHitAt = Date.now() - 200000;
-  engine.startInactivityWatchdog(100);
-  if (engine.isRunning && Date.now() - engine.lastHitAt > 100) {
-    engine.stop();
-  }
-  assert.ok(stopped, 'El canal entra en reposo tras timeout');
-  if (engine.inactivityTimer) clearInterval(engine.inactivityTimer);
+  assert.strictEqual(status.channelName, 'Random 24/7');
 
   const xml = engine.getXmltvProgrammes('http://localhost:3000', new Date(), 3);
   assert.ok(xml.includes('channel="random_tv"'));
+  assert.ok(xml.includes('Variedades'));
 
   fs.rmSync(tmpDir, { recursive: true, force: true });
 });

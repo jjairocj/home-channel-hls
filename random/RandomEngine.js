@@ -61,7 +61,7 @@ class RandomEngine extends EventEmitter {
 
     this.encoder = config.encoder || createEncoder();
     this.watermarkFile = config.watermarkFile || path.join(CHANNEL_ROOT, 'watermark.png');
-    this.channelNumber = config.channelNumber !== undefined ? config.channelNumber : 103;
+    this.channelNumber = config.channelNumber !== undefined ? config.channelNumber : 101;
     this.channelName = config.channelName || 'Random 24/7';
     this.process = null;
     this.shouldBeRunning = false;
@@ -90,10 +90,10 @@ class RandomEngine extends EventEmitter {
     return this.queue.at(this.index);
   }
 
-  /** Extrae todos los episodios listos de series autorizadas para Canal 103 (Random 24/7).
-   * - Excluye expresamente Los Simpsons y Futurama (poseen sus propios canales 24/7 en CH-101 y CH-102).
-   * - Incluye: Coraje el Perro Cobarde, Las Chicas Superpoderosas, Transformers (Beast Wars),
-   *   La Casa de los Dibujos, Rick y Morty y Smiling Friends.
+  /** Extrae todos los episodios listos de series autorizadas para Canal 101 (Random 24/7).
+   * - Incluye: Los Simpsons, Futurama, Padre de Familia, Coraje el Perro Cobarde,
+   *   Las Chicas Superpoderosas, Transformers (Beast Wars), La Casa de los Dibujos,
+   *   Rick y Morty, Smiling Friends, El Crítico, Escuadrón del Tiempo, etc.
    */
   loadAllEpisodes() {
     const shows = (this.db ? this.db.getShows() : []) || [];
@@ -108,11 +108,15 @@ class RandomEngine extends EventEmitter {
     if (customConfig && Array.isArray(customConfig.showIds) && customConfig.showIds.length > 0) {
       for (const id of customConfig.showIds) episodicShowIds.add(String(id));
     } else {
-      // Palabras clave de series EXCLUIDAS de Canal 103 (ya tienen canales propios 24/7)
-      const EXCLUDED_KEYWORDS = ['simpson', 'futurama'];
+      // Palabras clave de series EXCLUIDAS de Canal 101
+      const EXCLUDED_KEYWORDS = [];
 
-      // Palabras clave de series permitidas en Canal 103 por defecto
+      // Palabras clave de series permitidas en Canal 101 por defecto
       const INCLUDED_KEYWORDS = [
+        'simpson',
+        'futurama',
+        'padre de familia',
+        'family guy',
         'coraje',
         'chicas superpoderosas',
         'transformers',
@@ -128,9 +132,7 @@ class RandomEngine extends EventEmitter {
         'biker mice',
         'ren y stimpy',
         'ren & stimpy',
-        'ren and stimpy',
-        'padre de familia',
-        'family guy'
+        'ren and stimpy'
       ];
 
       const isMatch = (str, keywords) => {

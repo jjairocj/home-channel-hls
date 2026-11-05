@@ -83,21 +83,12 @@ module.exports = function registerPublicRoutes(app, ctx) {
     };
   };
 
-  // HLS Canal 101: Los Simpsons 24/7 (Bajo demanda / On-demand)
-  const simpsonsDir = path.join(__dirname, '..', 'stream_simpsons');
-  app.use('/simpsons/live',
-    createChannelHlsMiddleware(() => ctx.simpsonsPlayout, simpsonsDir),
-    express.static(simpsonsDir, { etag: false, lastModified: false, cacheControl: false })
-  );
+  // HLS Canales secundarios: Los Simpsons y Futurama se unificaron en Random (redirección 302 transparente)
+  app.use(['/simpsons/live', '/futurama/live'], (req, res) => {
+    res.redirect(302, '/random/live/channel.m3u8');
+  });
 
-  // HLS Canal 102: Futurama 24/7 (Bajo demanda / On-demand)
-  const futuramaDir = path.join(__dirname, '..', 'stream_futurama');
-  app.use('/futurama/live',
-    createChannelHlsMiddleware(() => ctx.futuramaPlayout, futuramaDir),
-    express.static(futuramaDir, { etag: false, lastModified: false, cacheControl: false })
-  );
-
-  // HLS Canal 103: Random 24/7 (Bajo demanda / On-demand)
+  // HLS Canal 101: Random 24/7 (Bajo demanda / On-demand o continuo)
   const randomDir = path.join(__dirname, '..', 'stream_random');
   app.use('/random/live',
     createChannelHlsMiddleware(() => ctx.randomPlayout, randomDir),
@@ -123,11 +114,7 @@ module.exports = function registerPublicRoutes(app, ctx) {
       `#EXTM3U url-tvg="${baseUrl}/epg.xml" x-tvg-url="${baseUrl}/epg.xml"`,
       `#EXTINF:-1 tvg-id="${id}" tvg-name="CrHe TV" tvg-logo="${baseUrl}/img/logo.png" group-title="Retro 90s" tvg-chno="100",CrHe TV`,
       `${baseUrl}/live/channel.m3u8`,
-      `#EXTINF:-1 tvg-id="simpsons_tv" tvg-name="Los Simpsons 24/7" tvg-logo="${baseUrl}/img/logo.png" group-title="Animación" tvg-chno="101",Los Simpsons 24/7`,
-      `${baseUrl}/simpsons/live/channel.m3u8`,
-      `#EXTINF:-1 tvg-id="futurama_tv" tvg-name="Futurama 24/7" tvg-logo="${baseUrl}/img/logo.png" group-title="Animación" tvg-chno="102",Futurama 24/7`,
-      `${baseUrl}/futurama/live/channel.m3u8`,
-      `#EXTINF:-1 tvg-id="random_tv" tvg-name="Random 24/7" tvg-logo="${baseUrl}/img/logo.png" group-title="Variedades" tvg-chno="103",Random 24/7`,
+      `#EXTINF:-1 tvg-id="random_tv" tvg-name="Random 24/7" tvg-logo="${baseUrl}/img/logo.png" group-title="Variedades" tvg-chno="101",Random 24/7`,
       `${baseUrl}/random/live/channel.m3u8`
     ];
     const m3uContent = lines.join('\r\n') + '\r\n';
@@ -157,21 +144,11 @@ module.exports = function registerPublicRoutes(app, ctx) {
     const blocks = [...onAir, ...projected];
     const key = `${baseUrl}|${blocks.length ? blocks[0].startTime : ''}|${blocks.length}`;
     if (epgCache.key !== key || Date.now() - epgCache.at > 60000) {
-      const extraChannels = `  <channel id="simpsons_tv">
-    <display-name>Los Simpsons 24/7</display-name>
-    <icon src="${baseUrl}/img/logo.png" />
-  </channel>
-  <channel id="futurama_tv">
-    <display-name>Futurama 24/7</display-name>
-    <icon src="${baseUrl}/img/logo.png" />
-  </channel>
-  <channel id="random_tv">
+      const extraChannels = `  <channel id="random_tv">
     <display-name>Random 24/7</display-name>
     <icon src="${baseUrl}/img/logo.png" />
   </channel>`;
-      const extraProgrammes = (ctx.simpsonsPlayout ? ctx.simpsonsPlayout.getXmltvProgrammes(baseUrl, new Date(), 36) : '') +
-        (ctx.futuramaPlayout ? ctx.futuramaPlayout.getXmltvProgrammes(baseUrl, new Date(), 36) : '') +
-        (ctx.randomPlayout ? ctx.randomPlayout.getXmltvProgrammes(baseUrl, new Date(), 36) : '');
+      const extraProgrammes = ctx.randomPlayout ? ctx.randomPlayout.getXmltvProgrammes(baseUrl, new Date(), 36) : '';
       epgCache = { key, xml: scheduler.generateXmltv(baseUrl, blocks, { extraChannels, extraProgrammes }), at: Date.now() };
     }
     res.set(IPTV_CORS);

@@ -58,12 +58,11 @@ const db = new Database();
 const scheduler = new Scheduler(db);
 const transcoder = new Transcoder(db, scheduler);
 const playout = new PlayoutEngine(scheduler);
-const SimpsonsEngine = require('./simpsons/SimpsonsEngine');
-const simpsonsPlayout = new SimpsonsEngine(db, { isOnDemand: false });
-const FuturamaEngine = require('./futurama/FuturamaEngine');
-const futuramaPlayout = new FuturamaEngine(db, { isOnDemand: false });
+// Canales secundarios: Los Simpsons y Futurama se unificaron en el Canal 101 (Random 24/7)
+const simpsonsPlayout = null;
+const futuramaPlayout = null;
 const RandomEngine = require('./random/RandomEngine');
-const randomPlayout = new RandomEngine(db, { isOnDemand: false });
+const randomPlayout = new RandomEngine(db, { isOnDemand: false, channelNumber: 101, channelName: 'Random 24/7' });
 
 // Cortinillas "A continuación" y carteleras nuevas: la cola de 24 h se arma con los clips
 // que ya existían, así que al terminar una tanda se reprograma en el próximo :00/:30
@@ -235,14 +234,12 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
   // Radio: pausada temporalmente (inactiva sin procesos en background)
   // radio.start().catch(e => console.warn('[Radio] Error al iniciar:', e.message));
 
-  // Canales 101, 102 y 103 siempre activos 24/7 (Always-On para sintonía instantánea sin cortes ni retardos)
+  // Canal 101 (Random 24/7 con Simpsons, Futurama, Padre de Familia, Anime y Cartoons) activo en emisión continua
   try {
-    simpsonsPlayout.start();
-    futuramaPlayout.start();
     randomPlayout.start();
-    console.log('[Canales 101/102/103] 📺 Canales 24/7 activos en transmisión continua.');
+    console.log('[Canal 101] 📺 Canal Random 24/7 activo en transmisión continua.');
   } catch (e) {
-    console.warn('[Canales Secundarios] Error al iniciar canales 24/7:', e.message);
+    console.warn('[Canal Random] Error al iniciar canal 24/7:', e.message);
   }
 
   // Auditoría de duraciones: si alguna estaba mal registrada, la emisión se recalcula
@@ -284,9 +281,9 @@ async function shutdown(signal) {
 
   audience.stop();
   playout.stop();
-  simpsonsPlayout.stop();
-  futuramaPlayout.stop();
-  randomPlayout.stop();
+  if (simpsonsPlayout) simpsonsPlayout.stop();
+  if (futuramaPlayout) futuramaPlayout.stop();
+  if (randomPlayout) randomPlayout.stop();
   radio.stop();
   db.flushLocalJsonSync();
   server.close();
